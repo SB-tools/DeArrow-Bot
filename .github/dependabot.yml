@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: "/"
+    target-branch: main
+    schedule:
+      interval: daily
+      time: '14:00'
+      timezone: Europe/Bratislava
+    pull-request-branch-name:
+      separator: "-"
+    open-pull-requests-limit: 99
