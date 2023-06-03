@@ -20,7 +20,7 @@ import (
 
 const (
 	dearrowApiURL          = "https://sponsor.ajay.app/api/branding?videoID=%s"
-	dearrowThumbnailApiURL = "https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=%s&time=%f"
+	dearrowThumbnailApiURL = "https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=%s&time=%f&generateNow=true"
 )
 
 func main() {
