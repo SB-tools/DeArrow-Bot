@@ -20,7 +20,7 @@ import (
 
 const (
 	dearrowApiURL          = "https://sponsor.ajay.app/api/branding?videoID=%s"
-	dearrowThumbnailApiURL = "https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=%s"
+	dearrowThumbnailApiURL = "https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=%s&time=%f"
 )
 
 func main() {
@@ -95,7 +95,7 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 	embedBuilder.SetAuthor(author.Name, author.URL, author.IconURL)
 	embedBuilder.SetTitle(ternary(len(titles) == 0, embed.Title, titles[0].Title))
 	embedBuilder.SetURL(embed.URL)
-	embedBuilder.SetImage(ternary(len(thumbnails) == 0, embed.Thumbnail.URL, fmt.Sprintf(dearrowThumbnailApiURL, videoID)))
+	embedBuilder.SetImage(ternary(len(thumbnails) == 0, embed.Thumbnail.URL, fmt.Sprintf(dearrowThumbnailApiURL, videoID, thumbnails[0].Timestamp)))
 	if len(titles) != 0 {
 		embedBuilder.SetFooterText("Original title: " + embed.Title)
 	}
