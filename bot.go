@@ -90,15 +90,21 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 	author := embed.Author
 	titles := brandingResponse.Titles
 	thumbnails := brandingResponse.Thumbnails
+	title := embed.Title
+	thumbnailURL := embed.Thumbnail.URL
 	embedBuilder := discord.NewEmbedBuilder()
 	embedBuilder.SetColor(embed.Color)
 	embedBuilder.SetAuthor(author.Name, author.URL, author.IconURL)
-	embedBuilder.SetTitle(ternary(len(titles) == 0, embed.Title, titles[0].Title))
 	embedBuilder.SetURL(embed.URL)
-	embedBuilder.SetImage(ternary(len(thumbnails) == 0, embed.Thumbnail.URL, fmt.Sprintf(dearrowThumbnailApiURL, videoID, thumbnails[0].Timestamp)))
 	if len(titles) != 0 {
+		title = titles[0].Title
 		embedBuilder.SetFooterText("Original title: " + embed.Title)
 	}
+	embedBuilder.SetTitle(title)
+	if len(thumbnails) != 0 {
+		thumbnailURL = fmt.Sprintf(dearrowThumbnailApiURL, videoID, thumbnails[0].Timestamp)
+	}
+	embedBuilder.SetImage(thumbnailURL)
 	rest := event.Client().Rest()
 	channelID := event.ChannelID
 	messageID := event.MessageID
@@ -126,11 +132,4 @@ type BrandingResponse struct {
 	Thumbnails []struct {
 		Timestamp float64 `json:"timestamp"`
 	} `json:"thumbnails"`
-}
-
-func ternary[T any](exp bool, ifCond T, elseCond T) T {
-	if exp {
-		return ifCond
-	}
-	return elseCond
 }
