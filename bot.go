@@ -84,7 +84,7 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 	defer rs.Body.Close()
 	var brandingResponse BrandingResponse
 	if err = json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
-		log.Error("there was an error while decoding a branding response: ", err)
+		log.Errorf("there was an error while decoding a branding response (%d): ", rs.StatusCode, err)
 		return
 	}
 	author := embed.Author
