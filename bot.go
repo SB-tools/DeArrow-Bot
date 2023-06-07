@@ -101,7 +101,7 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 		embedBuilder.SetFooterText("Original title: " + embed.Title)
 	}
 	embedBuilder.SetTitle(title)
-	if len(thumbnails) != 0 {
+	if len(thumbnails) != 0 && !thumbnails[0].Original {
 		thumbnailURL = fmt.Sprintf(dearrowThumbnailApiURL, videoID, thumbnails[0].Timestamp)
 	}
 	embedBuilder.SetImage(thumbnailURL)
@@ -131,5 +131,6 @@ type BrandingResponse struct {
 	} `json:"titles"`
 	Thumbnails []struct {
 		Timestamp float64 `json:"timestamp"`
+		Original  bool    `json:"original"`
 	} `json:"thumbnails"`
 }
