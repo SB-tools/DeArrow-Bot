@@ -78,9 +78,6 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 		log.Error("there was an error while running a branding request: ", err)
 		return
 	}
-	if rs.StatusCode == http.StatusNotFound {
-		return
-	}
 	defer rs.Body.Close()
 	var brandingResponse BrandingResponse
 	if err = json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
@@ -102,7 +99,13 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 	}
 	embedBuilder.SetTitle(title)
 	if len(thumbnails) != 0 && !thumbnails[0].Original {
-		thumbnailURL = fmt.Sprintf(dearrowThumbnailApiURL, videoID, thumbnails[0].Timestamp)
+		thumbnailURL = formatThumbnailURL(videoID, thumbnails[0].Timestamp)
+	} else {
+		videoDuration := brandingResponse.VideoDuration
+		if videoDuration != nil && *videoDuration != 0 {
+			duration := *videoDuration
+			thumbnailURL = formatThumbnailURL(videoID, brandingResponse.RandomTime*duration)
+		}
 	}
 	embedBuilder.SetImage(thumbnailURL)
 	rest := event.Client().Rest()
@@ -133,4 +136,10 @@ type BrandingResponse struct {
 		Timestamp float64 `json:"timestamp"`
 		Original  bool    `json:"original"`
 	} `json:"thumbnails"`
+	RandomTime    float64  `json:"randomTime"`
+	VideoDuration *float64 `json:"videoDuration"`
+}
+
+func formatThumbnailURL(videoID string, timestamp float64) string {
+	return fmt.Sprintf(dearrowThumbnailApiURL, videoID, timestamp)
 }
