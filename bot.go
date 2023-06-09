@@ -28,9 +28,9 @@ func main() {
 	log.Info("starting the bot...")
 	log.Info("disgo version: ", disgo.Version)
 
-	client, err := disgo.New(os.Getenv("DEARROW_THUMBNAILS_TOKEN"),
+	client, err := disgo.New(os.Getenv("DEARROW_BOT_TOKEN"),
 		bot.WithGatewayConfigOpts(gateway.WithIntents(gateway.IntentGuildMessages, gateway.IntentMessageContent),
-			gateway.WithPresenceOpts(gateway.WithWatchingActivity("thumbnails"))),
+			gateway.WithPresenceOpts(gateway.WithWatchingActivity("YouTube embeds"))),
 		bot.WithCacheConfigOpts(cache.WithCaches(cache.FlagsNone)),
 		bot.WithEventListeners(&events.ListenerAdapter{
 			OnGuildMessageCreate: func(event *events.GuildMessageCreate) {
@@ -50,7 +50,7 @@ func main() {
 		log.Fatal("error while connecting to the gateway: ", err)
 	}
 
-	log.Info("dearrow thumbnails bot is now running.")
+	log.Info("dearrow bot is now running.")
 	s := make(chan os.Signal, 1)
 	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-s
