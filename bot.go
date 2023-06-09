@@ -143,5 +143,5 @@ type BrandingResponse struct {
 		Original  bool    `json:"original"`
 	} `json:"thumbnails"`
 	RandomTime float64 `json:"randomTime"`
-	VideoDuration float64 `json:"videoDurtion"`
+	VideoDuration float64 `json:"videoDuration"`
 }
