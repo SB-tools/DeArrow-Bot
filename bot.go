@@ -27,6 +27,7 @@ var (
 const (
 	dearrowApiURL          = "https://sponsor.ajay.app/api/branding?videoID=%s"
 	dearrowThumbnailApiURL = "https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=%s&time=%f&generateNow=true"
+	storagePath            = "/home/cane/dearrow_bot/guilds.json"
 )
 
 func main() {
@@ -34,8 +35,7 @@ func main() {
 	log.Info("starting the bot...")
 	log.Info("disgo version: ", disgo.Version)
 
-	home, _ := os.UserHomeDir()
-	k, err := jsonstore.Open(home + "/guilds.json")
+	k, err := jsonstore.Open(storagePath)
 	if err != nil {
 		panic(err)
 	}
@@ -89,8 +89,7 @@ func onCommand(event *events.ApplicationCommandInteractionCreate) {
 			log.Errorf("there was an error while setting mode %d for guild %d: ", thumbnailMode, guildID, err)
 			return
 		}
-		home, _ := os.UserHomeDir()
-		if err := jsonstore.Save(ks, home+"/guilds.json"); err != nil {
+		if err := jsonstore.Save(ks, storagePath); err != nil {
 			log.Errorf("there was an error while saving data for guild %d: ", guildID, err)
 			return
 		}
