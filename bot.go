@@ -129,6 +129,9 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 	}
 	u, _ := url.Parse(embed.URL)
 	videoID := u.Query().Get("v")
+	if videoID == "" {
+		return
+	}
 	path := fmt.Sprintf(dearrowApiURL, videoID)
 	rs, err := http.Get(path)
 	if err != nil {
