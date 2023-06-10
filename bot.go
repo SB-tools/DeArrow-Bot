@@ -11,6 +11,7 @@ import (
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/json"
 	"github.com/disgoorg/log"
+	"github.com/disgoorg/snowflake/v2"
 	"net/http"
 	"net/url"
 	"os"
@@ -31,7 +32,10 @@ func main() {
 	client, err := disgo.New(os.Getenv("DEARROW_BOT_TOKEN"),
 		bot.WithGatewayConfigOpts(gateway.WithIntents(gateway.IntentGuildMessages, gateway.IntentMessageContent, gateway.IntentGuilds),
 			gateway.WithPresenceOpts(gateway.WithWatchingActivity("YouTube embeds"))),
-		bot.WithCacheConfigOpts(cache.WithCaches(cache.FlagChannels)),
+		bot.WithCacheConfigOpts(cache.WithCaches(cache.FlagChannels, cache.FlagRoles, cache.FlagMembers),
+			cache.WithMemberCachePolicy(func(entity discord.Member) bool {
+				return entity.User.ID == snowflake.GetEnv("DEARROW_USER_ID")
+			})),
 		bot.WithEventListeners(&events.ListenerAdapter{
 			OnGuildMessageCreate: func(event *events.GuildMessageCreate) {
 				replaceYouTubeEmbed(event.GenericGuildMessage)
