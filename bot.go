@@ -34,7 +34,8 @@ func main() {
 	log.Info("starting the bot...")
 	log.Info("disgo version: ", disgo.Version)
 
-	k, err := jsonstore.Open("guilds.json")
+	home, _ := os.UserHomeDir()
+	k, err := jsonstore.Open(home + "/guilds.json")
 	if err != nil {
 		panic(err)
 	}
@@ -88,7 +89,8 @@ func onCommand(event *events.ApplicationCommandInteractionCreate) {
 			log.Errorf("there was an error while setting mode %d for guild %d: ", thumbnailMode, guildID, err)
 			return
 		}
-		if err := jsonstore.Save(ks, "guilds.json"); err != nil {
+		home, _ := os.UserHomeDir()
+		if err := jsonstore.Save(ks, home+"/guilds.json"); err != nil {
 			log.Errorf("there was an error while saving data for guild %d: ", guildID, err)
 			return
 		}
