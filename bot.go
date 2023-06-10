@@ -29,9 +29,9 @@ func main() {
 	log.Info("disgo version: ", disgo.Version)
 
 	client, err := disgo.New(os.Getenv("DEARROW_BOT_TOKEN"),
-		bot.WithGatewayConfigOpts(gateway.WithIntents(gateway.IntentGuildMessages, gateway.IntentMessageContent),
+		bot.WithGatewayConfigOpts(gateway.WithIntents(gateway.IntentGuildMessages, gateway.IntentMessageContent, gateway.IntentGuilds),
 			gateway.WithPresenceOpts(gateway.WithWatchingActivity("YouTube embeds"))),
-		bot.WithCacheConfigOpts(cache.WithCaches(cache.FlagsNone)),
+		bot.WithCacheConfigOpts(cache.WithCaches(cache.FlagChannels)),
 		bot.WithEventListeners(&events.ListenerAdapter{
 			OnGuildMessageCreate: func(event *events.GuildMessageCreate) {
 				replaceYouTubeEmbed(event.GenericGuildMessage)
@@ -57,6 +57,14 @@ func main() {
 }
 
 func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
+	channel, _ := event.Channel()
+	client := event.Client()
+	caches := client.Caches()
+	selfMember, _ := caches.SelfMember(event.GuildID)
+	permissions := caches.MemberPermissionsInChannel(channel, selfMember)
+	if !permissions.Has(discord.PermissionSendMessages) {
+		return
+	}
 	message := event.Message
 	embeds := message.Embeds
 	if len(embeds) == 0 {
@@ -109,7 +117,7 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 		}
 	}
 	embedBuilder.SetImage(thumbnailURL)
-	rest := event.Client().Rest()
+	rest := client.Rest()
 	channelID := event.ChannelID
 	messageID := event.MessageID
 	_, err = rest.CreateMessage(channelID, discord.NewMessageCreateBuilder().
