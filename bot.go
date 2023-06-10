@@ -62,7 +62,7 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 	caches := client.Caches()
 	selfMember, _ := caches.SelfMember(event.GuildID)
 	permissions := caches.MemberPermissionsInChannel(channel, selfMember)
-	if !permissions.Has(discord.PermissionSendMessages) {
+	if permissions.Missing(discord.PermissionSendMessages) {
 		return
 	}
 	message := event.Message
