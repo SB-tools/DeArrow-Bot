@@ -73,15 +73,16 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 	}
 	u, _ := url.Parse(embed.URL)
 	videoID := u.Query().Get("v")
-	rs, err := http.Get(fmt.Sprintf(dearrowApiURL, videoID))
+	path := fmt.Sprintf(dearrowApiURL, videoID)
+	rs, err := http.Get(path)
 	if err != nil {
-		log.Error("there was an error while running a branding request: ", err)
+		log.Errorf("there was an error while running a branding request (%s): ", path, err)
 		return
 	}
 	defer rs.Body.Close()
 	var brandingResponse BrandingResponse
 	if err = json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
-		log.Errorf("there was an error while decoding a branding response (%d): ", rs.StatusCode, err)
+		log.Errorf("there was an error while decoding a branding response (%d %s): ", rs.StatusCode, path, err)
 		return
 	}
 	author := embed.Author
