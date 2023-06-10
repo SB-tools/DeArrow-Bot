@@ -121,7 +121,7 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 	var embed discord.Embed
 	for _, e := range embeds {
 		provider := e.Provider
-		if provider != nil && provider.Name == "YouTube" && embed.Type == discord.EmbedTypeVideo {
+		if provider != nil && provider.Name == "YouTube" {
 			embed = e
 			break
 		}
