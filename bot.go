@@ -12,11 +12,16 @@ import (
 	"github.com/disgoorg/json"
 	"github.com/disgoorg/log"
 	"github.com/disgoorg/snowflake/v2"
+	"github.com/schollz/jsonstore"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
+)
+
+var (
+	ks *jsonstore.JSONStore
 )
 
 const (
@@ -29,6 +34,12 @@ func main() {
 	log.Info("starting the bot...")
 	log.Info("disgo version: ", disgo.Version)
 
+	k, err := jsonstore.Open("guilds.json")
+	if err != nil {
+		panic(err)
+	}
+	ks = k
+
 	client, err := disgo.New(os.Getenv("DEARROW_BOT_TOKEN"),
 		bot.WithGatewayConfigOpts(gateway.WithIntents(gateway.IntentGuildMessages, gateway.IntentMessageContent, gateway.IntentGuilds),
 			gateway.WithPresenceOpts(gateway.WithWatchingActivity("YouTube embeds"))),
@@ -37,6 +48,7 @@ func main() {
 				return entity.User.ID == snowflake.GetEnv("DEARROW_USER_ID")
 			})),
 		bot.WithEventListeners(&events.ListenerAdapter{
+			OnApplicationCommandInteraction: onCommand,
 			OnGuildMessageCreate: func(event *events.GuildMessageCreate) {
 				replaceYouTubeEmbed(event.GenericGuildMessage)
 			},
@@ -60,11 +72,42 @@ func main() {
 	<-s
 }
 
+func onCommand(event *events.ApplicationCommandInteractionCreate) {
+	data := event.SlashCommandInteractionData()
+	guildID := event.GuildID()
+	messageBuilder := discord.NewMessageCreateBuilder()
+	switch *data.SubCommandName {
+	case "get":
+		messageBuilder.SetContentf("Current mode is set to **%s**.", getGuildData(*guildID).ThumbnailMode)
+	case "set":
+		thumbnailMode := ThumbnailMode(data.Int("mode"))
+		err := ks.Set(guildID.String(), GuildData{
+			ThumbnailMode: thumbnailMode,
+		})
+		if err != nil {
+			log.Errorf("there was an error while setting mode %d for guild %d: ", thumbnailMode, guildID, err)
+			return
+		}
+		if err := jsonstore.Save(ks, "guilds.json"); err != nil {
+			log.Errorf("there was an error while saving data for guild %d: ", guildID, err)
+			return
+		}
+		messageBuilder.SetContentf("Mode has been set to **%s**.", thumbnailMode)
+	}
+	err := event.CreateMessage(messageBuilder.
+		SetEphemeral(true).
+		Build())
+	if err != nil {
+		log.Error("there was an error while creating a command response: ", err)
+	}
+}
+
 func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 	channel, _ := event.Channel()
 	client := event.Client()
 	caches := client.Caches()
-	selfMember, _ := caches.SelfMember(event.GuildID)
+	guildID := event.GuildID
+	selfMember, _ := caches.SelfMember(guildID)
 	permissions := caches.MemberPermissionsInChannel(channel, selfMember)
 	if permissions.Missing(discord.PermissionSendMessages) {
 		return
@@ -111,16 +154,28 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 		embedBuilder.SetFooterText("Original title: " + embed.Title)
 	}
 	embedBuilder.SetTitle(title)
+
 	if len(thumbnails) != 0 && !thumbnails[0].Original {
 		thumbnailURL = formatThumbnailURL(videoID, thumbnails[0].Timestamp)
 	} else {
-		videoDuration := brandingResponse.VideoDuration
-		if videoDuration != nil && *videoDuration != 0 {
-			duration := *videoDuration
-			thumbnailURL = formatThumbnailURL(videoID, brandingResponse.RandomTime*duration)
+		thumbnailMode := getGuildData(guildID).ThumbnailMode
+		switch thumbnailMode {
+		case ThumbnailModeRandomTime:
+			videoDuration := brandingResponse.VideoDuration
+			if videoDuration != nil && *videoDuration != 0 {
+				duration := *videoDuration
+				thumbnailURL = formatThumbnailURL(videoID, brandingResponse.RandomTime*duration)
+			}
+		case ThumbnailModeBlank:
+			thumbnailURL = ""
+		case ThumbnailModeOriginal:
+			if len(titles) == 0 {
+				return
+			}
 		}
 	}
 	embedBuilder.SetImage(thumbnailURL)
+
 	rest := client.Rest()
 	channelID := event.ChannelID
 	messageID := event.MessageID
@@ -151,6 +206,41 @@ type BrandingResponse struct {
 	} `json:"thumbnails"`
 	RandomTime    float64  `json:"randomTime"`
 	VideoDuration *float64 `json:"videoDuration"`
+}
+
+type GuildData struct {
+	ThumbnailMode ThumbnailMode `json:"thumbnail_mode"`
+}
+
+type ThumbnailMode int
+
+const (
+	ThumbnailModeRandomTime ThumbnailMode = iota
+	ThumbnailModeBlank
+	ThumbnailModeOriginal
+)
+
+func (t ThumbnailMode) String() string {
+	switch t {
+	case ThumbnailModeRandomTime:
+		return "Show a screenshot from a random time"
+	case ThumbnailModeBlank:
+		return "Show no thumbnail"
+	case ThumbnailModeOriginal:
+		return "Show the original thumbnail"
+	}
+	return "Unknown"
+}
+
+func getGuildData(guildID snowflake.ID) GuildData {
+	var guildData GuildData
+	if err := ks.Get(guildID.String(), &guildData); err != nil {
+		_, ok := err.(jsonstore.NoSuchKeyError)
+		if !ok {
+			log.Errorf("there was an error while getting data for guild %d: ", guildID, err)
+		}
+	}
+	return guildData
 }
 
 func formatThumbnailURL(videoID string, timestamp float64) string {

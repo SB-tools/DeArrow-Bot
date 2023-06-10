@@ -6,10 +6,11 @@ require (
 	github.com/disgoorg/disgo v0.16.6-0.20230603204007-0b0b6db253d6
 	github.com/disgoorg/json v1.1.0
 	github.com/disgoorg/log v1.2.0
+	github.com/disgoorg/snowflake/v2 v2.0.1
+	github.com/schollz/jsonstore v1.1.0
 )
 
 require (
-	github.com/disgoorg/snowflake/v2 v2.0.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/sasha-s/go-csync v0.0.0-20210812194225-61421b77c44b // indirect
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
