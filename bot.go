@@ -17,6 +17,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 )
 
@@ -154,7 +155,7 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 	embedBuilder.SetAuthor(author.Name, author.URL, author.IconURL)
 	embedBuilder.SetURL(embed.URL)
 	if len(titles) != 0 {
-		title = titles[0].Title
+		title = strings.ReplaceAll(titles[0].Title, ">", "")
 		embedBuilder.SetFooterText("Original title: " + embed.Title)
 	}
 	embedBuilder.SetTitle(title)
