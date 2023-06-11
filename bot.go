@@ -22,13 +22,13 @@ import (
 )
 
 var (
-	ks *jsonstore.JSONStore
+	ks          *jsonstore.JSONStore
+	storagePath = os.Getenv("DEARROW_STORAGE_PATH")
 )
 
 const (
 	dearrowApiURL          = "https://sponsor.ajay.app/api/branding?videoID=%s"
 	dearrowThumbnailApiURL = "https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=%s&time=%f&generateNow=true"
-	storagePath            = "/home/cane/dearrow_bot/guilds.json"
 )
 
 func main() {
