@@ -22,8 +22,9 @@ import (
 )
 
 var (
-	ks          *jsonstore.JSONStore
-	storagePath = os.Getenv("DEARROW_STORAGE_PATH")
+	ks            *jsonstore.JSONStore
+	storagePath   = os.Getenv("DEARROW_STORAGE_PATH")
+	dearrowUserID = snowflake.GetEnv("DEARROW_USER_ID")
 )
 
 const (
@@ -47,7 +48,7 @@ func main() {
 			gateway.WithPresenceOpts(gateway.WithWatchingActivity("YouTube embeds"))),
 		bot.WithCacheConfigOpts(cache.WithCaches(cache.FlagChannels, cache.FlagRoles, cache.FlagMembers),
 			cache.WithMemberCachePolicy(func(entity discord.Member) bool {
-				return entity.User.ID == snowflake.GetEnv("DEARROW_USER_ID")
+				return entity.User.ID == dearrowUserID
 			})),
 		bot.WithEventListeners(&events.ListenerAdapter{
 			OnApplicationCommandInteraction: onCommand,
