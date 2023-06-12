@@ -191,7 +191,7 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 		SetAllowedMentions(&discord.AllowedMentions{}).
 		Build())
 	if err != nil {
-		log.Error("there was an error while creating a message in channel %d: ", channelID, err)
+		log.Errorf("there was an error while creating a message in channel %d: ", channelID, err)
 		return
 	}
 	_, err = rest.UpdateMessage(channelID, messageID, discord.NewMessageUpdateBuilder().
