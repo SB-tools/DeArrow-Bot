@@ -238,14 +238,13 @@ func (t ThumbnailMode) String() string {
 	return "Unknown"
 }
 
-func getGuildData(guildID snowflake.ID) GuildData {
-	var guildData GuildData
-	if err := ks.Get(guildID.String(), &guildData); err != nil {
+func getGuildData(guildID snowflake.ID) (guildData GuildData) {
+	if err := ks.Get(guildID.String(), guildData); err != nil {
 		if _, ok := err.(jsonstore.NoSuchKeyError); !ok {
 			log.Errorf("there was an error while getting data for guild %d: ", guildID, err)
 		}
 	}
-	return guildData
+	return
 }
 
 func formatThumbnailURL(videoID string, timestamp float64) string {
