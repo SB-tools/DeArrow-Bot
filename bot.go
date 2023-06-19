@@ -239,7 +239,7 @@ func (t ThumbnailMode) String() string {
 }
 
 func getGuildData(guildID snowflake.ID) (guildData GuildData) {
-	if err := ks.Get(guildID.String(), guildData); err != nil {
+	if err := ks.Get(guildID.String(), &guildData); err != nil {
 		if _, ok := err.(jsonstore.NoSuchKeyError); !ok {
 			log.Errorf("there was an error while getting data for guild %d: ", guildID, err)
 		}
