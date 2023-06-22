@@ -106,6 +106,10 @@ func onCommand(event *events.ApplicationCommandInteractionCreate) {
 }
 
 func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
+	message := event.Message
+	if message.Author.Bot {
+		return
+	}
 	channel, _ := event.Channel()
 	client := event.Client()
 	caches := client.Caches()
@@ -115,90 +119,91 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 	if permissions.Missing(discord.PermissionSendMessages) {
 		return
 	}
-	message := event.Message
 	embeds := message.Embeds
 	if len(embeds) == 0 {
 		return
 	}
-	var embed discord.Embed
-	for _, e := range embeds {
-		provider := e.Provider
-		if provider != nil && provider.Name == "YouTube" {
-			embed = e
-			break
-		}
-		return
-	}
-	u, _ := url.Parse(embed.URL)
-	videoID := u.Query().Get("v")
-	if videoID == "" {
-		return
-	}
-	path := fmt.Sprintf(dearrowApiURL, videoID)
-	rs, err := http.Get(path)
-	if err != nil {
-		log.Errorf("there was an error while running a branding request (%s): ", path, err)
-		return
-	}
-	defer rs.Body.Close()
-	var brandingResponse BrandingResponse
-	if err = json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
-		log.Errorf("there was an error while decoding a branding response (%d %s): ", rs.StatusCode, path, err)
-		return
-	}
-	author := embed.Author
-	titles := brandingResponse.Titles
-	thumbnails := brandingResponse.Thumbnails
-	title := embed.Title
-	thumbnailURL := embed.Thumbnail.URL
-	embedBuilder := discord.NewEmbedBuilder()
-	embedBuilder.SetColor(embed.Color)
-	embedBuilder.SetAuthor(author.Name, author.URL, author.IconURL)
-	embedBuilder.SetURL(embed.URL)
-	if len(titles) != 0 {
-		title = strings.ReplaceAll(titles[0].Title, ">", "")
-		embedBuilder.SetFooterText("Original title: " + embed.Title)
-	}
-	embedBuilder.SetTitle(title)
-
-	if len(thumbnails) != 0 && !thumbnails[0].Original {
-		thumbnailURL = formatThumbnailURL(videoID, thumbnails[0].Timestamp)
-	} else {
-		thumbnailMode := getGuildData(guildID).ThumbnailMode
-		switch thumbnailMode {
-		case ThumbnailModeRandomTime:
-			videoDuration := brandingResponse.VideoDuration
-			if videoDuration != nil && *videoDuration != 0 {
-				duration := *videoDuration
-				thumbnailURL = formatThumbnailURL(videoID, brandingResponse.RandomTime*duration)
-			}
-		case ThumbnailModeBlank:
-			thumbnailURL = ""
-		case ThumbnailModeOriginal:
-			if len(titles) == 0 {
-				return
-			}
-		}
-	}
-	embedBuilder.SetImage(thumbnailURL)
-
+	thumbnailMode := getGuildData(guildID).ThumbnailMode
 	rest := client.Rest()
 	channelID := event.ChannelID
 	messageID := event.MessageID
-	_, err = rest.CreateMessage(channelID, discord.NewMessageCreateBuilder().
-		SetEmbeds(embedBuilder.Build()).
-		SetMessageReferenceByID(messageID).
-		SetAllowedMentions(&discord.AllowedMentions{}).
-		Build())
-	if err != nil {
-		log.Errorf("there was an error while creating a message in channel %d: ", channelID, err)
-		return
+	var replacedAny bool
+	for _, embed := range embeds {
+		provider := embed.Provider
+		if provider == nil || provider.Name != "YouTube" {
+			continue
+		}
+		u, _ := url.Parse(embed.URL)
+		videoID := u.Query().Get("v")
+		if videoID == "" {
+			continue
+		}
+		func() {
+			path := fmt.Sprintf(dearrowApiURL, videoID)
+			rs, err := http.Get(path)
+			if err != nil {
+				log.Errorf("there was an error while running a branding request (%s): ", path, err)
+				return
+			}
+			defer rs.Body.Close()
+			var brandingResponse BrandingResponse
+			if err = json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
+				log.Errorf("there was an error while decoding a branding response (%d %s): ", rs.StatusCode, path, err)
+				return
+			}
+			author := embed.Author
+			titles := brandingResponse.Titles
+			thumbnails := brandingResponse.Thumbnails
+			title := embed.Title
+			thumbnailURL := embed.Thumbnail.URL
+			embedBuilder := discord.NewEmbedBuilder()
+			embedBuilder.SetColor(embed.Color)
+			embedBuilder.SetAuthor(author.Name, author.URL, author.IconURL)
+			embedBuilder.SetURL(embed.URL)
+			if len(titles) != 0 {
+				title = strings.ReplaceAll(titles[0].Title, ">", "")
+				embedBuilder.SetFooterText("Original title: " + embed.Title)
+			}
+			embedBuilder.SetTitle(title)
+
+			if len(thumbnails) != 0 && !thumbnails[0].Original {
+				thumbnailURL = formatThumbnailURL(videoID, thumbnails[0].Timestamp)
+			} else {
+				switch thumbnailMode {
+				case ThumbnailModeRandomTime:
+					videoDuration := brandingResponse.VideoDuration
+					if videoDuration != nil && *videoDuration != 0 {
+						duration := *videoDuration
+						thumbnailURL = formatThumbnailURL(videoID, brandingResponse.RandomTime*duration)
+					}
+				case ThumbnailModeBlank:
+					thumbnailURL = ""
+				case ThumbnailModeOriginal:
+					if len(titles) == 0 {
+						return
+					}
+				}
+			}
+			embedBuilder.SetImage(thumbnailURL)
+			_, err = rest.CreateMessage(channelID, discord.NewMessageCreateBuilder().
+				SetEmbeds(embedBuilder.Build()).
+				SetMessageReferenceByID(messageID).
+				SetAllowedMentions(&discord.AllowedMentions{}).
+				Build())
+			if err != nil {
+				log.Errorf("there was an error while creating a message in channel %d: ", channelID, err)
+				return
+			}
+			replacedAny = true
+		}()
 	}
-	_, err = rest.UpdateMessage(channelID, messageID, discord.NewMessageUpdateBuilder().
-		SetSuppressEmbeds(true).
-		Build())
-	if err != nil {
-		log.Error("there was an error while suppressing embeds: ", err)
+	if replacedAny {
+		_, err := rest.UpdateMessage(channelID, messageID, discord.NewMessageUpdateBuilder().
+			SetSuppressEmbeds(true).
+			Build())
+		if err != nil {
+			log.Error("there was an error while suppressing embeds: ", err)
+		}
 	}
 }
 
