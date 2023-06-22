@@ -106,10 +106,6 @@ func onCommand(event *events.ApplicationCommandInteractionCreate) {
 }
 
 func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
-	message := event.Message
-	if message.Author.Bot {
-		return
-	}
 	channel, _ := event.Channel()
 	client := event.Client()
 	caches := client.Caches()
@@ -119,6 +115,7 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 	if permissions.Missing(discord.PermissionSendMessages) {
 		return
 	}
+	message := event.Message
 	embeds := message.Embeds
 	if len(embeds) == 0 {
 		return
