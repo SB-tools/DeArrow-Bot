@@ -13,6 +13,7 @@ import (
 	"github.com/disgoorg/log"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/schollz/jsonstore"
+	"golang.org/x/exp/maps"
 	"net/http"
 	"net/url"
 	"os"
@@ -120,11 +121,8 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 	if len(embeds) == 0 {
 		return
 	}
+	dearrowEmbeds := make(map[string]discord.Embed)
 	thumbnailMode := getGuildData(guildID).ThumbnailMode
-	rest := client.Rest()
-	channelID := event.ChannelID
-	messageID := event.MessageID
-	var replacedAny bool
 	for _, embed := range embeds {
 		provider := embed.Provider
 		if provider == nil || provider.Name != "YouTube" {
@@ -133,6 +131,9 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 		u, _ := url.Parse(embed.URL)
 		videoID := u.Query().Get("v")
 		if videoID == "" {
+			continue
+		}
+		if _, ok := dearrowEmbeds[videoID]; ok {
 			continue
 		}
 		func() {
@@ -182,20 +183,23 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 				}
 			}
 			embedBuilder.SetImage(thumbnailURL)
-			_, err = rest.CreateMessage(channelID, discord.NewMessageCreateBuilder().
-				SetEmbeds(embedBuilder.Build()).
-				SetMessageReferenceByID(messageID).
-				SetAllowedMentions(&discord.AllowedMentions{}).
-				Build())
-			if err != nil {
-				log.Errorf("there was an error while creating a message in channel %d: ", channelID, err)
-				return
-			}
-			replacedAny = true
+			dearrowEmbeds[videoID] = embedBuilder.Build()
 		}()
 	}
-	if replacedAny {
-		_, err := rest.UpdateMessage(channelID, messageID, discord.NewMessageUpdateBuilder().
+	if len(dearrowEmbeds) != 0 {
+		rest := client.Rest()
+		channelID := event.ChannelID
+		messageID := event.MessageID
+		_, err := rest.CreateMessage(channelID, discord.NewMessageCreateBuilder().
+			SetEmbeds(maps.Values(dearrowEmbeds)...).
+			SetMessageReferenceByID(messageID).
+			SetAllowedMentions(&discord.AllowedMentions{}).
+			Build())
+		if err != nil {
+			log.Errorf("there was an error while creating a message in channel %d: ", channelID, err)
+			return
+		}
+		_, err = rest.UpdateMessage(channelID, messageID, discord.NewMessageUpdateBuilder().
 			SetSuppressEmbeds(true).
 			Build())
 		if err != nil {
