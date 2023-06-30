@@ -159,7 +159,7 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 			embedBuilder.SetAuthor(author.Name, author.URL, author.IconURL)
 			embedBuilder.SetURL(embed.URL)
 			if len(titles) != 0 {
-				title = strings.ReplaceAll(titles[0].Title, ">", "")
+				title = strings.ReplaceAll(titles[0].Title, `(^|\s)>(\S)`, "$1$2")
 				embedBuilder.SetFooterText("Original title: " + embed.Title)
 			}
 			embedBuilder.SetTitle(title)
