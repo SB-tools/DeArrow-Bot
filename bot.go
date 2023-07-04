@@ -18,7 +18,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"strings"
+	"regexp"
 	"syscall"
 )
 
@@ -26,6 +26,7 @@ var (
 	ks            *jsonstore.JSONStore
 	storagePath   = os.Getenv("DEARROW_STORAGE_PATH")
 	dearrowUserID = snowflake.GetEnv("DEARROW_USER_ID")
+	arrowRegex    = regexp.MustCompile(`(^|\s)>(\S)`)
 )
 
 const (
@@ -159,8 +160,8 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 			embedBuilder.SetAuthor(author.Name, author.URL, author.IconURL)
 			embedBuilder.SetURL(embed.URL)
 			if len(titles) != 0 {
-				title = strings.ReplaceAll(titles[0].Title, `(^|\s)>(\S)`, "$1$2")
-				embedBuilder.SetFooterText("Original title: " + embed.Title)
+				embedBuilder.SetFooterText("Original title: " + title)
+				title = arrowRegex.ReplaceAllString(titles[0].Title, "$1$2")
 			}
 			embedBuilder.SetTitle(title)
 
