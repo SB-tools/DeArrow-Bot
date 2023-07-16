@@ -174,6 +174,8 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 					if videoDuration != nil && *videoDuration != 0 {
 						duration := *videoDuration
 						thumbnailURL = formatThumbnailURL(videoID, brandingResponse.RandomTime*duration)
+					} else if len(titles) == 0 {
+						return
 					}
 				case ThumbnailModeBlank:
 					thumbnailURL = ""
