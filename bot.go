@@ -159,7 +159,7 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 			embedBuilder.SetColor(embed.Color)
 			embedBuilder.SetAuthor(author.Name, author.URL, author.IconURL)
 			embedBuilder.SetURL(embed.URL)
-			if len(titles) != 0 {
+			if len(titles) != 0 && !titles[0].Original && titles[0].Votes > -1 {
 				embedBuilder.SetFooterText("Original title: " + title)
 				title = arrowRegex.ReplaceAllString(titles[0].Title, "$1$2")
 			}
@@ -213,7 +213,9 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 
 type BrandingResponse struct {
 	Titles []struct {
-		Title string `json:"title"`
+		Title    string `json:"title"`
+		Original bool   `json:"original"`
+		Votes    int    `json:"votes"`
 	} `json:"titles"`
 	Thumbnails []struct {
 		Timestamp float64 `json:"timestamp"`
