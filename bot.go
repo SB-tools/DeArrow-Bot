@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
@@ -251,7 +252,8 @@ func (t ThumbnailMode) String() string {
 
 func getGuildData(guildID snowflake.ID) (guildData GuildData) {
 	if err := ks.Get(guildID.String(), &guildData); err != nil {
-		if _, ok := err.(jsonstore.NoSuchKeyError); !ok {
+		var noSuchKeyError jsonstore.NoSuchKeyError
+		if !errors.As(err, &noSuchKeyError) {
 			log.Errorf("there was an error while getting data for guild %d: ", guildID, err)
 		}
 	}
