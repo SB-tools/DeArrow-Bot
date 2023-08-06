@@ -147,7 +147,7 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 			}
 			defer rs.Body.Close()
 			var brandingResponse BrandingResponse
-			if err = json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
+			if err := json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
 				log.Errorf("there was an error while decoding a branding response (%d %s): ", rs.StatusCode, path, err)
 				return
 			}
@@ -160,7 +160,8 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 			embedBuilder.SetColor(embed.Color)
 			embedBuilder.SetAuthor(author.Name, author.URL, author.IconURL)
 			embedBuilder.SetURL(embed.URL)
-			if len(titles) != 0 && !titles[0].Original && titles[0].Votes > -1 {
+			replaceTitle := len(titles) != 0 && !titles[0].Original && titles[0].Votes > -1
+			if replaceTitle {
 				embedBuilder.SetFooterText("Original title: " + title)
 				title = arrowRegex.ReplaceAllString(titles[0].Title, "$1$2")
 			}
@@ -175,13 +176,13 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 					if videoDuration != nil && *videoDuration != 0 {
 						duration := *videoDuration
 						thumbnailURL = formatThumbnailURL(videoID, brandingResponse.RandomTime*duration)
-					} else if len(titles) == 0 {
+					} else if !replaceTitle {
 						return
 					}
 				case ThumbnailModeBlank:
 					thumbnailURL = ""
 				case ThumbnailModeOriginal:
-					if len(titles) == 0 {
+					if !replaceTitle {
 						return
 					}
 				}
