@@ -15,6 +15,7 @@ import (
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/schollz/jsonstore"
 	"golang.org/x/exp/maps"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -118,12 +119,13 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 	if permissions.Missing(discord.PermissionSendMessages) {
 		return
 	}
-	message := event.Message
-	embeds := message.Embeds
+	embeds := event.Message.Embeds
 	if len(embeds) == 0 {
 		return
 	}
-	dearrowEmbeds := make(map[string]discord.Embed)
+	videoDataMap := make(map[string]DeArrowEmbedData)
+	rest := client.Rest()
+	httpClient := rest.HTTPClient()
 	thumbnailMode := getGuildData(guildID).ThumbnailMode
 	for _, embed := range embeds {
 		provider := embed.Provider
@@ -135,12 +137,12 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 		if videoID == "" {
 			continue
 		}
-		if _, ok := dearrowEmbeds[videoID]; ok {
+		if _, ok := videoDataMap[videoID]; ok {
 			continue
 		}
 		func() {
 			path := fmt.Sprintf(dearrowApiURL, videoID)
-			rs, err := http.Get(path)
+			rs, err := httpClient.Get(path)
 			if err != nil {
 				log.Errorf("there was an error while running a branding request (%s): ", path, err)
 				return
@@ -151,65 +153,99 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 				log.Errorf("there was an error while decoding a branding response (%d %s): ", rs.StatusCode, path, err)
 				return
 			}
-			author := embed.Author
 			titles := brandingResponse.Titles
 			thumbnails := brandingResponse.Thumbnails
-			title := embed.Title
-			thumbnailURL := embed.Thumbnail.URL
-			embedBuilder := discord.NewEmbedBuilder()
-			embedBuilder.SetColor(embed.Color)
-			embedBuilder.SetAuthor(author.Name, author.URL, author.IconURL)
-			embedBuilder.SetURL(embed.URL)
+			embedBuilder := discord.EmbedBuilder{Embed: embed}
+			embedBuilder.SetImage(embed.Thumbnail.URL)
+			embedBuilder.SetThumbnail("")
+			embedBuilder.SetDescription("")
 			replaceTitle := len(titles) != 0 && !titles[0].Original && titles[0].Votes > -1
 			if replaceTitle {
-				embedBuilder.SetFooterText("Original title: " + title)
-				title = arrowRegex.ReplaceAllString(titles[0].Title, "$1$2")
+				embedBuilder.SetFooterText("Original title: " + embed.Title)
+				embedBuilder.SetTitle(arrowRegex.ReplaceAllString(titles[0].Title, "$1$2"))
 			}
-			embedBuilder.SetTitle(title)
-
+			var replacementThumbnailURL string
 			if len(thumbnails) != 0 && !thumbnails[0].Original {
-				thumbnailURL = formatThumbnailURL(videoID, thumbnails[0].Timestamp)
+				replacementThumbnailURL = formatThumbnailURL(videoID, thumbnails[0].Timestamp)
 			} else {
 				switch thumbnailMode {
 				case ThumbnailModeRandomTime:
 					videoDuration := brandingResponse.VideoDuration
 					if videoDuration != nil && *videoDuration != 0 {
 						duration := *videoDuration
-						thumbnailURL = formatThumbnailURL(videoID, brandingResponse.RandomTime*duration)
+						replacementThumbnailURL = formatThumbnailURL(videoID, brandingResponse.RandomTime*duration)
 					} else if !replaceTitle {
 						return
 					}
 				case ThumbnailModeBlank:
-					thumbnailURL = ""
+					embedBuilder.SetImage("")
 				case ThumbnailModeOriginal:
 					if !replaceTitle {
 						return
 					}
 				}
 			}
-			embedBuilder.SetImage(thumbnailURL)
-			dearrowEmbeds[videoID] = embedBuilder.Build()
+			embedData := DeArrowEmbedData{}
+			if replacementThumbnailURL != "" {
+				embedBuilder.SetImagef("attachment://embed-%s.webp", videoID)
+				embedData.ReplacementThumbnailURL = &replacementThumbnailURL
+			}
+			embedData.Embed = embedBuilder.Build()
+			videoDataMap[videoID] = embedData
 		}()
 	}
-	if len(dearrowEmbeds) != 0 {
-		rest := client.Rest()
-		channelID := event.ChannelID
-		messageID := event.MessageID
-		_, err := rest.CreateMessage(channelID, discord.NewMessageCreateBuilder().
-			SetEmbeds(maps.Values(dearrowEmbeds)...).
-			SetMessageReferenceByID(messageID).
-			SetAllowedMentions(&discord.AllowedMentions{}).
-			Build())
-		if err != nil {
-			log.Errorf("there was an error while creating a message in channel %d: ", channelID, err)
-			return
+	if len(videoDataMap) == 0 {
+		return
+	}
+	channelID := event.ChannelID
+	messageID := event.MessageID
+	var dearrowEmbeds []discord.Embed
+	for _, data := range maps.Values(videoDataMap) {
+		dearrowEmbeds = append(dearrowEmbeds, data.Embed)
+	}
+	dearrowReply, err := rest.CreateMessage(channelID, discord.NewMessageCreateBuilder().
+		SetEmbeds(dearrowEmbeds...).
+		SetMessageReferenceByID(messageID).
+		SetAllowedMentions(&discord.AllowedMentions{}).
+		Build())
+	if err != nil {
+		log.Errorf("there was an error while creating a message in channel %d: ", channelID, err)
+		return
+	}
+	_, err = rest.UpdateMessage(channelID, messageID, discord.NewMessageUpdateBuilder().
+		SetSuppressEmbeds(true).
+		Build())
+	if err != nil {
+		log.Error("there was an error while suppressing embeds: ", err)
+		return
+	}
+	updateBuilder := discord.NewMessageUpdateBuilder()
+	updateBuilder.SetEmbeds(dearrowEmbeds...)
+	var bodies []io.ReadCloser
+	for videoID, data := range videoDataMap {
+		if data.ReplacementThumbnailURL == nil {
+			continue
 		}
-		_, err = rest.UpdateMessage(channelID, messageID, discord.NewMessageUpdateBuilder().
-			SetSuppressEmbeds(true).
-			Build())
+		thumbnailURL := *data.ReplacementThumbnailURL
+		rs, err := httpClient.Get(thumbnailURL)
 		if err != nil {
-			log.Error("there was an error while suppressing embeds: ", err)
+			log.Errorf("there was an error while downloading a thumbnail (%s): ", thumbnailURL, err)
+			continue
 		}
+		if rs.StatusCode != http.StatusOK {
+			continue
+		}
+		bodies = append(bodies, rs.Body)
+		updateBuilder.AddFile(fmt.Sprintf("embed-%s.webp", videoID), "", rs.Body)
+	}
+	if len(bodies) == 0 {
+		return
+	}
+	if _, err := rest.UpdateMessage(channelID, dearrowReply.ID, updateBuilder.Build()); err != nil {
+		log.Error("there was an error while editing an embed: ", err)
+	}
+	for _, body := range bodies {
+		body.Close()
 	}
 }
 
@@ -249,6 +285,11 @@ func (t ThumbnailMode) String() string {
 		return "Show the original thumbnail"
 	}
 	return "Unknown"
+}
+
+type DeArrowEmbedData struct {
+	Embed                   discord.Embed
+	ReplacementThumbnailURL *string
 }
 
 func getGuildData(guildID snowflake.ID) (guildData GuildData) {
