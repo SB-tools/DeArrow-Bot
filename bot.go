@@ -187,7 +187,7 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 			}
 			embedData := DeArrowEmbedData{}
 			if replacementThumbnailURL != "" {
-				embedBuilder.SetImagef("attachment://embed-%s.webp", videoID)
+				embedBuilder.SetImagef("attachment://thumbnail-%s.webp", videoID)
 				embedData.ReplacementThumbnailURL = &replacementThumbnailURL
 			}
 			embedData.Embed = embedBuilder.Build()
@@ -236,7 +236,7 @@ func replaceYouTubeEmbed(event *events.GenericGuildMessage) {
 			continue
 		}
 		bodies = append(bodies, rs.Body)
-		updateBuilder.AddFile(fmt.Sprintf("embed-%s.webp", videoID), "", rs.Body)
+		updateBuilder.AddFile(fmt.Sprintf("thumbnail-%s.webp", videoID), "", rs.Body)
 	}
 	if len(bodies) == 0 {
 		return
