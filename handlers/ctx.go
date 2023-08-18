@@ -16,16 +16,9 @@ func (h *Handlers) HandleDeleteEmbeds(event *handler.CommandEvent) error {
 			Build())
 		return nil
 	}
-	reference := message.MessageReference
-	if reference == nil {
-		_ = event.CreateMessage(messageBuilder.
-			SetContent("Message has no parent.").
-			Build())
-		return nil
-	}
 	rest := event.Client().Rest()
 	channelID := event.Channel().ID()
-	parent, err := rest.GetMessage(channelID, *reference.MessageID)
+	parent, err := rest.GetMessage(channelID, *message.MessageReference.MessageID)
 	if err != nil {
 		_ = event.CreateMessage(messageBuilder.
 			SetContent("Failed to fetch the parent message.").
@@ -38,9 +31,8 @@ func (h *Handlers) HandleDeleteEmbeds(event *handler.CommandEvent) error {
 			Build())
 		return nil
 	}
-	messageID := message.ID
-	if err := rest.DeleteMessage(channelID, messageID); err != nil {
-		log.Errorf("there was an error while deleting message %d in channel %d: ", messageID, channelID, err)
+	if err := rest.DeleteMessage(channelID, message.ID); err != nil {
+		log.Errorf("there was an error while deleting message %d in channel %d: ", message.ID, channelID, err)
 		return nil
 	}
 	return event.CreateMessage(messageBuilder.
