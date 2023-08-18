@@ -14,12 +14,16 @@ import (
 	"strings"
 )
 
+const (
+	videoIDLen = 11
+)
+
 func (h *Handlers) HandleBranding(event *handler.CommandEvent) error {
 	data := event.SlashCommandInteractionData()
 	input := data.String("video")
 	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)
 	var videoID string
-	if len(input) == 11 {
+	if len(input) == videoIDLen {
 		videoID = input
 	} else {
 		u, err := url.Parse(input)
@@ -34,7 +38,7 @@ func (h *Handlers) HandleBranding(event *handler.CommandEvent) error {
 			videoID = path[strings.LastIndex(path, "/")+1:]
 		}
 	}
-	if videoID == "" || len(videoID) != 11 {
+	if videoID == "" || len(videoID) != videoIDLen {
 		return event.CreateMessage(messageBuilder.
 			SetContent("Cannot extract video ID from input.").
 			Build())
