@@ -5,6 +5,7 @@ import (
 	"dearrow-thumbnails/handlers"
 	"dearrow-thumbnails/internal"
 	"dearrow-thumbnails/types"
+	"dearrow-thumbnails/util"
 	"fmt"
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
@@ -31,7 +32,6 @@ var (
 )
 
 const (
-	dearrowApiURL          = "https://sponsor.ajay.app/api/branding?videoID=%s"
 	dearrowThumbnailApiURL = "https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=%s&time=%f&generateNow=true"
 )
 
@@ -120,16 +120,15 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 			continue
 		}
 		func() {
-			path := fmt.Sprintf(dearrowApiURL, videoID)
-			rs, err := httpClient.Get(path)
+			rs, err := util.FetchVideoBranding(httpClient, videoID, false)
 			if err != nil {
-				log.Errorf("there was an error while running a branding request (%s): ", path, err)
+				log.Errorf("there was an error while running a branding request (%s): ", videoID, err)
 				return
 			}
 			defer rs.Body.Close()
 			var brandingResponse BrandingResponse
 			if err := json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
-				log.Errorf("there was an error while decoding a branding response (%d %s): ", rs.StatusCode, path, err)
+				log.Errorf("there was an error while decoding a branding response (%d %s): ", rs.StatusCode, videoID, err)
 				return
 			}
 			titles := brandingResponse.Titles

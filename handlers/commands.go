@@ -17,6 +17,7 @@ func NewHandlers(b *internal.Bot, c *internal.Config) *Handlers {
 				r.Command("/get", handlers.HandleModeGet)
 				r.Command("/set", handlers.HandleModeSet)
 			})
+			r.Command("/branding", handlers.HandleBranding)
 		})
 	})
 	handlers.Group(func(r handler.Router) {
