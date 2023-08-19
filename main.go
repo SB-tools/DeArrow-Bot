@@ -56,7 +56,7 @@ func main() {
 	b := &internal.Bot{
 		Keystore: k,
 	}
-	h := handlers.NewHandlers(b, c)
+	h := handlers.NewHandler(b, c)
 
 	client, err := disgo.New(os.Getenv("DEARROW_BOT_TOKEN"),
 		bot.WithGatewayConfigOpts(gateway.WithIntents(gateway.IntentGuildMessages, gateway.IntentMessageContent, gateway.IntentGuilds),

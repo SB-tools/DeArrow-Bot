@@ -17,7 +17,7 @@ const (
 	videoIDLen = 11
 )
 
-func (h *Handlers) HandleBranding(event *handler.CommandEvent) (err error) {
+func (h *Handler) HandleBranding(event *handler.CommandEvent) (err error) {
 	data := event.SlashCommandInteractionData()
 	input := data.String("video")
 	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)
@@ -69,14 +69,14 @@ func (h *Handlers) HandleBranding(event *handler.CommandEvent) (err error) {
 		Build())
 }
 
-func (h *Handlers) HandleModeGet(event *handler.CommandEvent) error {
+func (h *Handler) HandleModeGet(event *handler.CommandEvent) error {
 	return event.CreateMessage(discord.NewMessageCreateBuilder().
 		SetContentf("Current mode is set to **%s**.", h.Bot.GetGuildData(*event.GuildID()).ThumbnailMode).
 		SetEphemeral(true).
 		Build())
 }
 
-func (h *Handlers) HandleModeSet(event *handler.CommandEvent) (err error) {
+func (h *Handler) HandleModeSet(event *handler.CommandEvent) (err error) {
 	data := event.SlashCommandInteractionData()
 	guildID := event.GuildID()
 	thumbnailMode := types.ThumbnailMode(data.Int("mode"))

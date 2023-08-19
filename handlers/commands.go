@@ -8,7 +8,7 @@ import (
 	"github.com/disgoorg/log"
 )
 
-func NewHandlers(b *internal.Bot, c *internal.Config) *Handlers {
+func NewHandler(b *internal.Bot, c *internal.Config) *Handler {
 	mux := handler.New()
 	mux.Error(func(e *events.InteractionCreate, err error) {
 		i := e.Interaction.(discord.ApplicationCommandInteraction)
@@ -18,7 +18,7 @@ func NewHandlers(b *internal.Bot, c *internal.Config) *Handlers {
 			SetEphemeral(true).
 			Build())
 	})
-	handlers := &Handlers{
+	handlers := &Handler{
 		Bot:    b,
 		Config: c,
 		Router: mux,
@@ -38,7 +38,7 @@ func NewHandlers(b *internal.Bot, c *internal.Config) *Handlers {
 	return handlers
 }
 
-type Handlers struct {
+type Handler struct {
 	Bot    *internal.Bot
 	Config *internal.Config
 	handler.Router
