@@ -7,7 +7,6 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/disgoorg/json"
-	"github.com/disgoorg/log"
 	"github.com/schollz/jsonstore"
 	"io"
 	"net/url"
@@ -18,7 +17,7 @@ const (
 	videoIDLen = 11
 )
 
-func (h *Handlers) HandleBranding(event *handler.CommandEvent) error {
+func (h *Handlers) HandleBranding(event *handler.CommandEvent) (err error) {
 	data := event.SlashCommandInteractionData()
 	input := data.String("video")
 	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)
@@ -45,25 +44,16 @@ func (h *Handlers) HandleBranding(event *handler.CommandEvent) error {
 	}
 	rs, err := util.FetchVideoBranding(event.Client().Rest().HTTPClient(), videoID, true)
 	if err != nil {
-		log.Errorf("there was an error while running a user branding request (%s): ", videoID, err)
-		return event.CreateMessage(messageBuilder.
-			SetContent("There was an error while fetching the branding.").
-			Build())
+		return err
 	}
 	defer rs.Body.Close()
 	b, err := io.ReadAll(rs.Body)
 	if err != nil {
-		log.Errorf("there was an error while reading response body (%s): ", videoID, err)
-		return event.CreateMessage(messageBuilder.
-			SetContent("There was an error while decoding the response.").
-			Build())
+		return err
 	}
 	var out bytes.Buffer
-	if err := json.Indent(&out, b, "", "  "); err != nil {
-		log.Errorf("there was an error while indenting the response (%s): ", videoID, err)
-		return event.CreateMessage(messageBuilder.
-			SetContent("There was an error while indenting the response.").
-			Build())
+	if err = json.Indent(&out, b, "", "  "); err != nil {
+		return err
 	}
 	indented := out.String()
 	if len(indented) > 4096 {
@@ -86,20 +76,18 @@ func (h *Handlers) HandleModeGet(event *handler.CommandEvent) error {
 		Build())
 }
 
-func (h *Handlers) HandleModeSet(event *handler.CommandEvent) error {
+func (h *Handlers) HandleModeSet(event *handler.CommandEvent) (err error) {
 	data := event.SlashCommandInteractionData()
 	guildID := event.GuildID()
 	thumbnailMode := types.ThumbnailMode(data.Int("mode"))
-	err := h.Bot.Keystore.Set(guildID.String(), types.GuildData{
+	err = h.Bot.Keystore.Set(guildID.String(), types.GuildData{
 		ThumbnailMode: thumbnailMode,
 	})
 	if err != nil {
-		log.Errorf("there was an error while setting mode %d for guild %d: ", thumbnailMode, guildID, err)
-		return nil
+		return err
 	}
-	if err := jsonstore.Save(h.Bot.Keystore, h.Config.StoragePath); err != nil {
-		log.Errorf("there was an error while saving data for guild %d: ", guildID, err)
-		return nil
+	if err = jsonstore.Save(h.Bot.Keystore, h.Config.StoragePath); err != nil {
+		return err
 	}
 	return event.CreateMessage(discord.NewMessageCreateBuilder().
 		SetContentf("Mode has been set to **%s**.", thumbnailMode).

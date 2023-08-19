@@ -2,14 +2,26 @@ package handlers
 
 import (
 	"dearrow-thumbnails/internal"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/handler"
+	"github.com/disgoorg/log"
 )
 
 func NewHandlers(b *internal.Bot, c *internal.Config) *Handlers {
+	mux := handler.New()
+	mux.Error(func(e *events.InteractionCreate, err error) {
+		i := e.Interaction.(discord.ApplicationCommandInteraction)
+		log.Errorf("there was an error while handling command /%s: %v", i.Data.CommandName(), err)
+		_ = e.Respond(discord.InteractionResponseTypeCreateMessage, discord.NewMessageCreateBuilder().
+			SetContentf("There was an error while handling the command: %v", err).
+			SetEphemeral(true).
+			Build())
+	})
 	handlers := &Handlers{
 		Bot:    b,
 		Config: c,
-		Router: handler.New(),
+		Router: mux,
 	}
 	handlers.Group(func(r handler.Router) {
 		r.Route("/dearrow", func(r handler.Router) {

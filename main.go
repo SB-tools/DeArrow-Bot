@@ -123,13 +123,13 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 		func() {
 			rs, err := util.FetchVideoBranding(httpClient, videoID, false)
 			if err != nil {
-				log.Errorf("there was an error while running a branding request (%s): ", videoID, err)
+				log.Errorf("there was an error while running a branding request (%s): %v", videoID, err)
 				return
 			}
 			defer rs.Body.Close()
 			var brandingResponse BrandingResponse
 			if err := json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
-				log.Errorf("there was an error while decoding a branding response (%d %s): ", rs.StatusCode, videoID, err)
+				log.Errorf("there was an error while decoding a branding response (%d %s): %v", rs.StatusCode, videoID, err)
 				return
 			}
 			titles := brandingResponse.Titles
@@ -188,7 +188,7 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 		SetAllowedMentions(&discord.AllowedMentions{}).
 		Build())
 	if err != nil {
-		log.Errorf("there was an error while creating a message in channel %d: ", channelID, err)
+		log.Errorf("there was an error while creating a message in channel %d: %v", channelID, err)
 		return
 	}
 	_, err = rest.UpdateMessage(channelID, messageID, discord.NewMessageUpdateBuilder().
@@ -208,13 +208,13 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 		thumbnailURL := *data.ReplacementThumbnailURL
 		req, err := http.NewRequest(http.MethodGet, thumbnailURL, nil)
 		if err != nil {
-			log.Errorf("there was an error while creating a request for thumbnail %s:", thumbnailURL, err)
+			log.Errorf("there was an error while creating a request for thumbnail %s: %v", thumbnailURL, err)
 			return
 		}
 		req.Header.Add("Authorization", priorityKey)
 		rs, err := httpClient.Do(req)
 		if err != nil {
-			log.Errorf("there was an error while downloading a thumbnail (%s): ", thumbnailURL, err)
+			log.Errorf("there was an error while downloading a thumbnail (%s): %v", thumbnailURL, err)
 			continue
 		}
 		if rs.StatusCode != http.StatusOK {

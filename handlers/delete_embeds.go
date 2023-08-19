@@ -3,10 +3,9 @@ package handlers
 import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
-	"github.com/disgoorg/log"
 )
 
-func (h *Handlers) HandleDeleteEmbeds(event *handler.CommandEvent) error {
+func (h *Handlers) HandleDeleteEmbeds(event *handler.CommandEvent) (err error) {
 	data := event.MessageCommandInteractionData()
 	message := data.TargetMessage()
 	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)
@@ -28,9 +27,8 @@ func (h *Handlers) HandleDeleteEmbeds(event *handler.CommandEvent) error {
 			SetContent("Only the message author can delete DeArrow embeds.").
 			Build())
 	}
-	if err := rest.DeleteMessage(channelID, message.ID); err != nil {
-		log.Errorf("there was an error while deleting message %d in channel %d: ", message.ID, channelID, err)
-		return nil
+	if err = rest.DeleteMessage(channelID, message.ID); err != nil {
+		return err
 	}
 	return event.CreateMessage(messageBuilder.
 		SetContent("Embeds have been deleted.").

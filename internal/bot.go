@@ -16,7 +16,7 @@ func (b *Bot) GetGuildData(guildID snowflake.ID) (guildData types.GuildData) {
 	if err := b.Keystore.Get(guildID.String(), &guildData); err != nil {
 		var noSuchKeyError jsonstore.NoSuchKeyError
 		if !errors.As(err, &noSuchKeyError) {
-			log.Errorf("there was an error while getting data for guild %d: ", guildID, err)
+			log.Errorf("there was an error while getting data for guild %d: %v", guildID, err)
 		}
 	}
 	return
