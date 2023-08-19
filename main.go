@@ -28,7 +28,8 @@ import (
 )
 
 var (
-	arrowRegex = regexp.MustCompile(`(^|\s)>(\S)`)
+	arrowRegex  = regexp.MustCompile(`(^|\s)>(\S)`)
+	priorityKey = os.Getenv("DEARROW_PRIORITY_KEY")
 )
 
 const (
@@ -205,7 +206,13 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 			continue
 		}
 		thumbnailURL := *data.ReplacementThumbnailURL
-		rs, err := httpClient.Get(thumbnailURL)
+		req, err := http.NewRequest(http.MethodGet, thumbnailURL, nil)
+		if err != nil {
+			log.Errorf("there was an error while creating a request for thumbnail %s:", thumbnailURL, err)
+			return
+		}
+		req.Header.Add("Authorization", priorityKey)
+		rs, err := httpClient.Do(req)
 		if err != nil {
 			log.Errorf("there was an error while downloading a thumbnail (%s): ", thumbnailURL, err)
 			continue
