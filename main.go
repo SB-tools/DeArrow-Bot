@@ -138,7 +138,6 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 			embedBuilder.SetImage(embed.Thumbnail.URL)
 			embedBuilder.SetThumbnail("")
 			embedBuilder.SetDescription("")
-			embedBuilder.SetColor(0x001BFF)
 			replaceTitle := len(titles) != 0 && !titles[0].Original && titles[0].Votes > -1
 			if replaceTitle {
 				embedBuilder.SetFooterText("Original title: " + embed.Title)
