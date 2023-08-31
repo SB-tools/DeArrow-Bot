@@ -14,17 +14,22 @@ import (
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/json"
-	"github.com/disgoorg/log"
 	"github.com/disgoorg/snowflake/v2"
+	"github.com/getsentry/sentry-go"
+	"github.com/lmittmann/tint"
+	slogmulti "github.com/samber/slog-multi"
+	slogsentry "github.com/samber/slog-sentry"
 	"github.com/schollz/jsonstore"
 	"golang.org/x/exp/maps"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
 	"regexp"
 	"syscall"
+	"time"
 )
 
 var (
@@ -37,9 +42,24 @@ const (
 )
 
 func main() {
-	log.SetLevel(log.LevelInfo)
-	log.Info("starting the bot...")
-	log.Info("disgo version: ", disgo.Version)
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn:           os.Getenv("SENTRY_DSN"),
+		EnableTracing: false,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	defer sentry.Flush(2 * time.Second)
+
+	logger := slog.New(slogmulti.Fanout(
+		tint.NewHandler(os.Stdout, &tint.Options{
+			Level: slog.LevelInfo,
+		}),
+		slogsentry.Option{Level: slog.LevelWarn}.NewSentryHandler()))
+	slog.SetDefault(logger)
+
+	slog.Info("starting the bot...", slog.String("disgo.version", disgo.Version))
 
 	storagePath := os.Getenv("DEARROW_STORAGE_PATH")
 	k, err := jsonstore.Open(storagePath)
@@ -74,16 +94,16 @@ func main() {
 			},
 		}))
 	if err != nil {
-		log.Fatal("error while building disgo instance: ", err)
+		panic(err)
 	}
 
 	defer client.Close(context.TODO())
 
 	if err := client.OpenGateway(context.TODO()); err != nil {
-		log.Fatal("error while connecting to the gateway: ", err)
+		panic(err)
 	}
 
-	log.Info("dearrow bot is now running.")
+	slog.Info("dearrow bot is now running.")
 	s := make(chan os.Signal, 1)
 	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-s
@@ -92,7 +112,7 @@ func main() {
 func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 	channel, ok := event.Channel()
 	if !ok {
-		log.Warnf("channel %d missing in cache", event.ChannelID)
+		slog.Warn("channel missing in cache", slog.Any("channel.id", event.ChannelID))
 		return
 	}
 	caches := event.Client().Caches()
@@ -125,13 +145,13 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 		func() {
 			rs, err := util.FetchVideoBranding(httpClient, videoID, false)
 			if err != nil {
-				log.Errorf("there was an error while running a branding request (%s): %v", videoID, err)
+				slog.Error("there was an error while running a branding request", slog.String("video.id", videoID), tint.Err(err))
 				return
 			}
 			defer rs.Body.Close()
 			var brandingResponse BrandingResponse
 			if err := json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
-				log.Errorf("there was an error while decoding a branding response (%d %s): %v", rs.StatusCode, videoID, err)
+				slog.Error("there was an error while decoding a branding response", slog.Int("status.code", rs.StatusCode), slog.String("video.id", videoID), tint.Err(err))
 				return
 			}
 			titles := brandingResponse.Titles
@@ -190,14 +210,14 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 		SetAllowedMentions(&discord.AllowedMentions{}).
 		Build())
 	if err != nil {
-		log.Errorf("there was an error while creating a message in channel %d: %v", channelID, err)
+		slog.Error("there was an error while creating a message in channel", slog.Any("channel.id", channelID), tint.Err(err))
 		return
 	}
 	_, err = rest.UpdateMessage(channelID, messageID, discord.NewMessageUpdateBuilder().
 		SetSuppressEmbeds(true).
 		Build())
 	if err != nil {
-		log.Error("there was an error while suppressing embeds: ", err)
+		slog.Error("there was an error while suppressing embeds", tint.Err(err))
 		return
 	}
 	updateBuilder := discord.NewMessageUpdateBuilder()
@@ -210,13 +230,13 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 		thumbnailURL := *data.ReplacementThumbnailURL
 		req, err := http.NewRequest(http.MethodGet, thumbnailURL, nil)
 		if err != nil {
-			log.Errorf("there was an error while creating a request for thumbnail %s: %v", thumbnailURL, err)
+			slog.Error("there was an error while creating a request for a thumbnail", slog.String("thumbnail.url", thumbnailURL), tint.Err(err))
 			return
 		}
 		req.Header.Add("Authorization", priorityKey)
 		rs, err := httpClient.Do(req)
 		if err != nil {
-			log.Errorf("there was an error while downloading a thumbnail (%s): %v", thumbnailURL, err)
+			slog.Error("there was an error while downloading a thumbnail", slog.String("thumbnail.url", thumbnailURL), tint.Err(err))
 			continue
 		}
 		if rs.StatusCode != http.StatusOK {
@@ -229,7 +249,7 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 		return
 	}
 	if _, err := rest.UpdateMessage(channelID, dearrowReply.ID, updateBuilder.Build()); err != nil {
-		log.Error("there was an error while editing an embed: ", err)
+		slog.Error("there was an error while editing an embed", tint.Err(err))
 	}
 	for _, body := range bodies {
 		body.Close()

@@ -5,14 +5,15 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/handler"
-	"github.com/disgoorg/log"
+	"github.com/lmittmann/tint"
+	"log/slog"
 )
 
 func NewHandler(b *internal.Bot, c *internal.Config) *Handler {
 	mux := handler.New()
 	mux.Error(func(e *events.InteractionCreate, err error) {
 		i := e.Interaction.(discord.ApplicationCommandInteraction)
-		log.Errorf("there was an error while handling command /%s: %v", i.Data.CommandName(), err)
+		slog.Error("there was an error while handling a command", slog.String("command.name", i.Data.CommandName()), tint.Err(err))
 		_ = e.Respond(discord.InteractionResponseTypeCreateMessage, discord.NewMessageCreateBuilder().
 			SetContentf("There was an error while handling the command: %v", err).
 			SetEphemeral(true).
