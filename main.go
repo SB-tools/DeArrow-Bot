@@ -90,13 +90,14 @@ func main() {
 }
 
 func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
-	channel, _ := event.Channel()
-	client := event.Client()
-	caches := client.Caches()
-	guildID := event.GuildID
-	selfMember, _ := caches.SelfMember(guildID)
+	channel, ok := event.Channel()
+	if !ok {
+		return
+	}
+	caches := event.Client().Caches()
+	selfMember, _ := caches.SelfMember(event.GuildID)
 	permissions := caches.MemberPermissionsInChannel(channel, selfMember)
-	if permissions.Missing(discord.PermissionSendMessages) {
+	if permissions.Missing(discord.PermissionSendMessages, discord.PermissionManageMessages, discord.PermissionEmbedLinks) {
 		return
 	}
 	embeds := event.Message.Embeds
@@ -104,9 +105,9 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 		return
 	}
 	videoDataMap := make(map[string]types.DeArrowEmbedData)
-	rest := client.Rest()
+	rest := event.Client().Rest()
 	httpClient := rest.HTTPClient()
-	thumbnailMode := bot.GetGuildData(guildID).ThumbnailMode
+	thumbnailMode := bot.GetGuildData(event.GuildID).ThumbnailMode
 	for _, embed := range embeds {
 		provider := embed.Provider
 		if provider == nil || provider.Name != "YouTube" {
