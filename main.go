@@ -92,6 +92,7 @@ func main() {
 func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 	channel, ok := event.Channel()
 	if !ok {
+		log.Warnf("channel %d missing in cache", event.ChannelID)
 		return
 	}
 	caches := event.Client().Caches()
