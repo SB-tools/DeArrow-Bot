@@ -15,19 +15,3 @@ jobs:
 
       - name: Build
         run: go build -v ./...
-  tidy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21.0'
-
-      - uses: evantorrie/mott-the-tidier@v1-beta
-
-      - uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: go mod tidy
