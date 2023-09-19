@@ -10,3 +10,13 @@ updates:
     pull-request-branch-name:
       separator: "-"
     open-pull-requests-limit: 99
+  - package-ecosystem: github-actions
+    directory: "/"
+    target-branch: main
+    schedule:
+      interval: daily
+      time: '14:00'
+      timezone: Europe/Bratislava
+    pull-request-branch-name:
+      separator: "-"
+    open-pull-requests-limit: 99
