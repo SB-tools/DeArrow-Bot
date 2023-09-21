@@ -3,7 +3,7 @@ module dearrow-thumbnails
 go 1.21
 
 require (
-	github.com/disgoorg/disgo v0.16.10-0.20230831201319-32a8226de5e3
+	github.com/disgoorg/disgo v0.16.10-0.20230921170155-f7f57449fc9a
 	github.com/disgoorg/json v1.1.0
 	github.com/disgoorg/snowflake/v2 v2.0.1
 	github.com/getsentry/sentry-go v0.24.1
