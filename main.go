@@ -166,8 +166,10 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 				embedBuilder.SetTitle(arrowRegex.ReplaceAllString(titles[0].Title, "$1$2"))
 			}
 			var replacementThumbnailURL string
-			if len(thumbnails) != 0 && !thumbnails[0].Original {
-				replacementThumbnailURL = formatThumbnailURL(videoID, thumbnails[0].Timestamp)
+			if len(thumbnails) != 0 {
+				if !thumbnails[0].Original {
+					replacementThumbnailURL = formatThumbnailURL(videoID, thumbnails[0].Timestamp)
+				}
 			} else {
 				switch thumbnailMode {
 				case types.ThumbnailModeRandomTime:
