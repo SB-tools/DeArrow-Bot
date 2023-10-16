@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"dearrow-thumbnails/types"
 	"dearrow-thumbnails/util"
+	"fmt"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/disgoorg/json"
@@ -55,15 +56,15 @@ func (h *Handler) HandleBranding(event *handler.CommandEvent) (err error) {
 	if err = json.Indent(&out, b, "", "  "); err != nil {
 		return err
 	}
-	indented := out.String()
-	if len(indented) > 4096 {
+	content := fmt.Sprintf("```json\n%s\n```", out.String())
+	if len(content) > 4096 {
 		return event.CreateMessage(messageBuilder.
-			SetContentf("Response is longer than 4096 chars (%d).", len(indented)).
+			SetContentf("Response is longer than 4096 chars (%d).", len(content)).
 			Build())
 	}
 	embedBuilder := discord.NewEmbedBuilder()
 	embedBuilder.SetColor(0x001BFF)
-	embedBuilder.SetDescriptionf("```json\n%s\n```", indented)
+	embedBuilder.SetDescription(content)
 	return event.CreateMessage(messageBuilder.
 		SetEmbeds(embedBuilder.Build()).
 		Build())
