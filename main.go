@@ -251,7 +251,7 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 		return
 	}
 	if _, err := rest.UpdateMessage(channelID, dearrowReply.ID, updateBuilder.Build()); err != nil {
-		slog.Error("there was an error while editing an embed", tint.Err(err))
+		slog.Error("there was an error while editing an embed", slog.Any("channel.id", channelID), tint.Err(err))
 	}
 	for _, body := range bodies {
 		body.Close()
