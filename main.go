@@ -148,10 +148,15 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 				slog.Error("there was an error while running a branding request", slog.String("video.id", videoID), tint.Err(err))
 				return
 			}
+			status := rs.StatusCode
+			if status != http.StatusOK && status != http.StatusNotFound {
+				slog.Warn("received an unexpected code from a branding response", slog.Int("status.code", status), slog.String("video.id", videoID))
+				return
+			}
 			defer rs.Body.Close()
 			var brandingResponse BrandingResponse
 			if err := json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
-				slog.Error("there was an error while decoding a branding response", slog.Int("status.code", rs.StatusCode), slog.String("video.id", videoID), tint.Err(err))
+				slog.Error("there was an error while decoding a branding response", slog.Int("status.code", status), slog.String("video.id", videoID), tint.Err(err))
 				return
 			}
 			titles := brandingResponse.Titles
