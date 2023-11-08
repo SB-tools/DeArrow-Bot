@@ -170,10 +170,10 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 				embedBuilder.SetFooterText("Original title: " + embed.Title)
 				embedBuilder.SetTitle(arrowRegex.ReplaceAllString(titles[0].Title, "$1$2"))
 			}
-			var replacementThumbnailURL string
+			embedData := types.DeArrowEmbedData{}
 			if len(thumbnails) != 0 {
 				if !thumbnails[0].Original {
-					replacementThumbnailURL = formatThumbnailURL(videoID, thumbnails[0].Timestamp)
+					embedData.ReplacementThumbnailURL = formatThumbnailURL(videoID, thumbnails[0].Timestamp)
 				}
 			} else {
 				switch thumbnailMode {
@@ -181,7 +181,7 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 					videoDuration := brandingResponse.VideoDuration
 					if videoDuration != nil && *videoDuration != 0 {
 						duration := *videoDuration
-						replacementThumbnailURL = formatThumbnailURL(videoID, brandingResponse.RandomTime*duration)
+						embedData.ReplacementThumbnailURL = formatThumbnailURL(videoID, brandingResponse.RandomTime*duration)
 					} else if !replaceTitle {
 						return
 					}
@@ -193,10 +193,8 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 					}
 				}
 			}
-			embedData := types.DeArrowEmbedData{}
-			if replacementThumbnailURL != "" {
+			if embedData.ReplacementThumbnailURL != "" {
 				embedBuilder.SetImagef("attachment://thumbnail-%s.webp", videoID)
-				embedData.ReplacementThumbnailURL = replacementThumbnailURL
 			}
 			embedData.Embed = embedBuilder.Build()
 			videoDataMap[videoID] = embedData
