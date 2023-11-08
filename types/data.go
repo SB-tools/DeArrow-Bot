@@ -8,7 +8,7 @@ type GuildData struct {
 
 type DeArrowEmbedData struct {
 	Embed                   discord.Embed
-	ReplacementThumbnailURL *string
+	ReplacementThumbnailURL string
 }
 
 type ThumbnailMode int

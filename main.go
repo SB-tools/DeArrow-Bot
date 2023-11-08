@@ -196,7 +196,7 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 			embedData := types.DeArrowEmbedData{}
 			if replacementThumbnailURL != "" {
 				embedBuilder.SetImagef("attachment://thumbnail-%s.webp", videoID)
-				embedData.ReplacementThumbnailURL = &replacementThumbnailURL
+				embedData.ReplacementThumbnailURL = replacementThumbnailURL
 			}
 			embedData.Embed = embedBuilder.Build()
 			videoDataMap[videoID] = embedData
@@ -231,10 +231,10 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 	updateBuilder.SetEmbeds(dearrowEmbeds...)
 	var bodies []io.ReadCloser
 	for videoID, data := range videoDataMap {
-		if data.ReplacementThumbnailURL == nil {
+		thumbnailURL := data.ReplacementThumbnailURL
+		if thumbnailURL == "" {
 			continue
 		}
-		thumbnailURL := *data.ReplacementThumbnailURL
 		req, err := http.NewRequest(http.MethodGet, thumbnailURL, nil)
 		if err != nil {
 			slog.Error("there was an error while creating a request for a thumbnail", slog.String("thumbnail.url", thumbnailURL), tint.Err(err))
