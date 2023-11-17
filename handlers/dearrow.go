@@ -10,36 +10,19 @@ import (
 	"github.com/disgoorg/json"
 	"github.com/schollz/jsonstore"
 	"io"
-	"net/url"
 	"os"
-	"strings"
+	"regexp"
 )
 
-const (
-	videoIDLen = 11
+var (
+	videoIDRegex = regexp.MustCompile(`[a-zA-Z0-9-_]{11}`)
 )
 
 func (h *Handler) HandleBranding(event *handler.CommandEvent) (err error) {
 	data := event.SlashCommandInteractionData()
-	input := data.String("video")
+	videoID := videoIDRegex.FindString(data.String("video"))
 	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)
-	var videoID string
-	if len(input) == videoIDLen {
-		videoID = input
-	} else {
-		u, err := url.Parse(input)
-		if err != nil {
-			return event.CreateMessage(messageBuilder.
-				SetContent("Cannot parse input as URL.").
-				Build())
-		}
-		videoID = u.Query().Get("v")
-		if videoID == "" {
-			path := strings.TrimSuffix(u.Path, "/")
-			videoID = path[strings.LastIndex(path, "/")+1:]
-		}
-	}
-	if videoID == "" || len(videoID) != videoIDLen {
+	if videoID == "" {
 		return event.CreateMessage(messageBuilder.
 			SetContent("Cannot extract video ID from input.").
 			Build())
