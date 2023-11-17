@@ -35,6 +35,7 @@ import (
 var (
 	arrowRegex  = regexp.MustCompile(`(^|\s)>(\S)`)
 	priorityKey = os.Getenv("DEARROW_PRIORITY_KEY")
+	environment = os.Getenv("DEARROW_ENVIRONMENT")
 )
 
 const (
@@ -45,6 +46,12 @@ func main() {
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn:           os.Getenv("SENTRY_DSN"),
 		EnableTracing: false,
+		BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
+			if environment == "PROD" { // only log events in prod
+				return event
+			}
+			return nil
+		},
 	})
 	if err != nil {
 		panic(err)
@@ -75,6 +82,7 @@ func main() {
 
 	b := &internal.Bot{
 		Keystore: k,
+		Client:   &http.Client{Timeout: 5 * time.Second},
 	}
 	h := handlers.NewHandler(b, c)
 

@@ -7,10 +7,12 @@ import (
 	"github.com/lmittmann/tint"
 	"github.com/schollz/jsonstore"
 	"log/slog"
+	"net/http"
 )
 
 type Bot struct {
 	Keystore *jsonstore.JSONStore
+	Client   *http.Client
 }
 
 func (b *Bot) GetGuildData(guildID snowflake.ID) (guildData types.GuildData) {

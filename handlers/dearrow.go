@@ -11,6 +11,7 @@ import (
 	"github.com/schollz/jsonstore"
 	"io"
 	"net/url"
+	"os"
 	"strings"
 )
 
@@ -43,8 +44,17 @@ func (h *Handler) HandleBranding(event *handler.CommandEvent) (err error) {
 			SetContent("Cannot extract video ID from input.").
 			Build())
 	}
-	rs, err := util.FetchVideoBranding(event.Client().Rest().HTTPClient(), videoID, true)
+	if err = event.DeferCreateMessage(true); err != nil {
+		return err
+	}
+	rs, err := util.FetchVideoBranding(h.Bot.Client, videoID, true)
 	if err != nil {
+		if os.IsTimeout(err) {
+			_, err = event.CreateFollowupMessage(messageBuilder.
+				SetContent("DeArrow API failed to respond within 5 seconds.").
+				Build())
+			return nil
+		}
 		return err
 	}
 	defer rs.Body.Close()
@@ -58,16 +68,18 @@ func (h *Handler) HandleBranding(event *handler.CommandEvent) (err error) {
 	}
 	content := fmt.Sprintf("```json\n%s\n```", out.String())
 	if len(content) > 4096 {
-		return event.CreateMessage(messageBuilder.
+		_, err = event.CreateFollowupMessage(messageBuilder.
 			SetContentf("Response is longer than 4096 chars (%d).", len(content)).
 			Build())
+		return err
 	}
 	embedBuilder := discord.NewEmbedBuilder()
 	embedBuilder.SetColor(0x001BFF)
 	embedBuilder.SetDescription(content)
-	return event.CreateMessage(messageBuilder.
+	_, err = event.CreateFollowupMessage(messageBuilder.
 		SetEmbeds(embedBuilder.Build()).
 		Build())
+	return err
 }
 
 func (h *Handler) HandleModeGet(event *handler.CommandEvent) error {
