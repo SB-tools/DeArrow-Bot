@@ -3,7 +3,7 @@ module dearrow-thumbnails
 go 1.21
 
 require (
-	github.com/disgoorg/disgo v0.16.12
+	github.com/disgoorg/disgo v0.16.13-0.20231118151003-c4ffb0537d5a
 	github.com/disgoorg/json v1.1.0
 	github.com/disgoorg/snowflake/v2 v2.0.1
 	github.com/getsentry/sentry-go v0.25.0
@@ -15,7 +15,6 @@ require (
 )
 
 require (
-	github.com/disgoorg/log v1.2.1 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/samber/lo v1.38.1 // indirect
 	github.com/sasha-s/go-csync v0.0.0-20210812194225-61421b77c44b // indirect

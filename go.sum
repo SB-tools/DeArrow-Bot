@@ -1,11 +1,9 @@
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/disgoorg/disgo v0.16.12 h1:9YxlDaQE0XoNpsory4w6UsILeG5eTkW9v0NyhyKKzA8=
-github.com/disgoorg/disgo v0.16.12/go.mod h1:QnvUII334g/LJzjOmhYGCJzbl38Og83iXCEe28DklVM=
+github.com/disgoorg/disgo v0.16.13-0.20231118151003-c4ffb0537d5a h1:Fes8I3I/414/MYXiJ+d1Ocmtu5+svrDZq6SYcdy3QzM=
+github.com/disgoorg/disgo v0.16.13-0.20231118151003-c4ffb0537d5a/go.mod h1:AE2J/8oLR2PtYfqcARsk1mgBxQ5z3Z1OD6Lc2SA0gak=
 github.com/disgoorg/json v1.1.0 h1:7xigHvomlVA9PQw9bMGO02PHGJJPqvX5AnwlYg/Tnys=
 github.com/disgoorg/json v1.1.0/go.mod h1:BHDwdde0rpQFDVsRLKhma6Y7fTbQKub/zdGO5O9NqqA=
-github.com/disgoorg/log v1.2.1 h1:kZYAWkUBcGy4LbZcgYtgYu49xNVLy+xG5Uq3yz5VVQs=
-github.com/disgoorg/log v1.2.1/go.mod h1:hhQWYTFTnIGzAuFPZyXJEi11IBm9wq+/TVZt/FEwX0o=
 github.com/disgoorg/snowflake/v2 v2.0.1 h1:CuUxGLwggUxEswZOmZ+mZ5i0xSumQdXW9tXW7uGqe+0=
 github.com/disgoorg/snowflake/v2 v2.0.1/go.mod h1:SPU9c2CNn5DSyb86QcKtdZgix9osEtKrHLW4rMhfLCs=
 github.com/getsentry/sentry-go v0.25.0 h1:q6Eo+hS+yoJlTO3uu/azhQadsD8V+jQn2D8VvX1eOyI=
@@ -34,8 +32,8 @@ github.com/sasha-s/go-csync v0.0.0-20210812194225-61421b77c44b h1:qYTY2tN72LhgDj
 github.com/sasha-s/go-csync v0.0.0-20210812194225-61421b77c44b/go.mod h1:/pA7k3zsXKdjjAiUhB5CjuKib9KJGCaLvZwtxGC8U0s=
 github.com/schollz/jsonstore v1.1.0 h1:WZBDjgezFS34CHI+myb4s8GGpir3UMpy7vWoCeO0n6E=
 github.com/schollz/jsonstore v1.1.0/go.mod h1:15c6+9guw8vDRyozGjN3FoILt0wpruJk9Pi66vjaZfg=
-github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=
-github.com/stretchr/testify v1.8.2/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
+github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
+github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 golang.org/x/crypto v0.15.0 h1:frVn1TEaCEaZcn3Tmd7Y2b5KKPaZ+I32Q2OA3kYp5TA=
 golang.org/x/crypto v0.15.0/go.mod h1:4ChreQoLWfG3xLDer1WdlH5NdlQ3+mwnQq1YTKY+72g=
 golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa h1:FRnLl4eNAQl8hwxVVC17teOw8kdjVDVAiFMtgUdTSRQ=
