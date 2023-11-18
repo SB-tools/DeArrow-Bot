@@ -36,6 +36,7 @@ var (
 	arrowRegex  = regexp.MustCompile(`(^|\s)>(\S)`)
 	priorityKey = os.Getenv("DEARROW_PRIORITY_KEY")
 	environment = os.Getenv("DEARROW_ENVIRONMENT")
+	replyMap    = make(map[snowflake.ID]snowflake.ID)
 )
 
 const (
@@ -95,10 +96,20 @@ func main() {
 			})),
 		bot.WithEventListeners(h, &events.ListenerAdapter{
 			OnGuildMessageCreate: func(event *events.GuildMessageCreate) {
-				replaceYouTubeEmbed(b, event.GenericGuildMessage)
+				replaceYouTubeEmbeds(b, event.GenericGuildMessage)
 			},
 			OnGuildMessageUpdate: func(event *events.GuildMessageUpdate) {
-				replaceYouTubeEmbed(b, event.GenericGuildMessage)
+				replaceYouTubeEmbeds(b, event.GenericGuildMessage)
+			},
+			OnGuildMessageDelete: func(event *events.GuildMessageDelete) {
+				messageID := event.MessageID
+				if replyID, ok := replyMap[messageID]; ok {
+					rest := event.Client().Rest()
+					if err := rest.DeleteMessage(event.ChannelID, replyID); err != nil {
+						slog.Error("there was an error while deleting a reply", slog.Any("reply.id", replyID), tint.Err(err))
+					}
+					delete(replyMap, messageID)
+				}
 			},
 		}))
 	if err != nil {
@@ -111,30 +122,38 @@ func main() {
 		panic(err)
 	}
 
+	startCleanScheduler()
+
 	slog.Info("dearrow bot is now running.")
 	s := make(chan os.Signal, 1)
 	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-s
 }
 
-func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
+func replaceYouTubeEmbeds(bot *internal.Bot, event *events.GenericGuildMessage) {
+	message := event.Message
+	originalMessageID := message.ID
+	if _, ok := replyMap[originalMessageID]; ok || message.Author.Bot {
+		return
+	}
 	channel, ok := event.Channel()
 	if !ok {
 		slog.Warn("channel missing in cache", slog.Any("channel.id", event.ChannelID))
 		return
 	}
-	caches := event.Client().Caches()
+	client := event.Client()
+	caches := client.Caches()
 	selfMember, _ := caches.SelfMember(event.GuildID)
 	permissions := caches.MemberPermissionsInChannel(channel, selfMember)
 	if permissions.Missing(discord.PermissionSendMessages, discord.PermissionManageMessages, discord.PermissionEmbedLinks) {
 		return
 	}
-	embeds := event.Message.Embeds
+	embeds := message.Embeds
 	if len(embeds) == 0 {
 		return
 	}
 	videoDataMap := make(map[string]types.DeArrowEmbedData)
-	rest := event.Client().Rest()
+	rest := client.Rest()
 	httpClient := rest.HTTPClient()
 	thumbnailMode := bot.GetGuildData(event.GuildID).ThumbnailMode
 	for _, embed := range embeds {
@@ -212,21 +231,21 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 		return
 	}
 	channelID := event.ChannelID
-	messageID := event.MessageID
 	var dearrowEmbeds []discord.Embed
 	for _, data := range maps.Values(videoDataMap) {
 		dearrowEmbeds = append(dearrowEmbeds, data.Embed)
 	}
 	dearrowReply, err := rest.CreateMessage(channelID, discord.NewMessageCreateBuilder().
 		SetEmbeds(dearrowEmbeds...).
-		SetMessageReferenceByID(messageID).
+		SetMessageReferenceByID(originalMessageID).
 		SetAllowedMentions(&discord.AllowedMentions{}).
 		Build())
 	if err != nil {
 		slog.Error("there was an error while creating a message in channel", slog.Any("channel.id", channelID), tint.Err(err))
 		return
 	}
-	_, err = rest.UpdateMessage(channelID, messageID, discord.NewMessageUpdateBuilder().
+	replyMap[originalMessageID] = dearrowReply.ID
+	_, err = rest.UpdateMessage(channelID, originalMessageID, discord.NewMessageUpdateBuilder().
 		SetSuppressEmbeds(true).
 		Build())
 	if err != nil {
@@ -267,6 +286,13 @@ func replaceYouTubeEmbed(bot *internal.Bot, event *events.GenericGuildMessage) {
 	for _, body := range bodies {
 		body.Close()
 	}
+}
+
+func startCleanScheduler() {
+	time.AfterFunc(24*time.Hour, func() {
+		clear(replyMap)
+		startCleanScheduler()
+	})
 }
 
 type BrandingResponse struct {
