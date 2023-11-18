@@ -136,6 +136,10 @@ func replaceYouTubeEmbeds(bot *internal.Bot, event *events.GenericGuildMessage) 
 	if _, ok := replyMap[originalMessageID]; ok || message.Author.Bot {
 		return
 	}
+	embeds := message.Embeds
+	if len(embeds) == 0 {
+		return
+	}
 	channel, ok := event.Channel()
 	if !ok {
 		slog.Warn("channel missing in cache", slog.Any("channel.id", event.ChannelID))
@@ -146,10 +150,6 @@ func replaceYouTubeEmbeds(bot *internal.Bot, event *events.GenericGuildMessage) 
 	selfMember, _ := caches.SelfMember(event.GuildID)
 	permissions := caches.MemberPermissionsInChannel(channel, selfMember)
 	if permissions.Missing(discord.PermissionSendMessages, discord.PermissionManageMessages, discord.PermissionEmbedLinks) {
-		return
-	}
-	embeds := message.Embeds
-	if len(embeds) == 0 {
 		return
 	}
 	videoDataMap := make(map[string]types.DeArrowEmbedData)
