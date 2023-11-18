@@ -132,12 +132,12 @@ func main() {
 
 func replaceYouTubeEmbeds(bot *internal.Bot, event *events.GenericGuildMessage) {
 	message := event.Message
-	originalMessageID := message.ID
-	if _, ok := replyMap[originalMessageID]; ok || message.Author.Bot {
-		return
-	}
 	embeds := message.Embeds
 	if len(embeds) == 0 {
+		return
+	}
+	originalMessageID := message.ID
+	if _, ok := replyMap[originalMessageID]; ok || message.Author.Bot {
 		return
 	}
 	channel, ok := event.Channel()
