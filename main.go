@@ -272,6 +272,7 @@ func replaceYouTubeEmbeds(bot *internal.Bot, event *events.GenericGuildMessage) 
 			continue
 		}
 		if rs.StatusCode != http.StatusOK {
+			slog.Warn("received an unexpected code from a thumbnail response", slog.Int("status.code", rs.StatusCode), slog.String("video.id", videoID), slog.String("thumbnail.url", thumbnailURL))
 			continue
 		}
 		bodies = append(bodies, rs.Body)
