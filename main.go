@@ -99,7 +99,6 @@ func main() {
 				replaceYouTubeEmbeds(b, event.GenericGuildMessage)
 			},
 			OnGuildMessageUpdate: func(event *events.GuildMessageUpdate) {
-				slog.Info("received a message update", slog.Any("channel.id", event.ChannelID), slog.Any("message.id", event.MessageID), slog.Any("flags", event.Message.Flags))
 				replaceYouTubeEmbeds(b, event.GenericGuildMessage)
 			},
 			OnGuildMessageDelete: func(event *events.GuildMessageDelete) {
