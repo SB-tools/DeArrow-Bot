@@ -22,56 +22,48 @@ var (
 func (h *Handler) HandleBranding(event *handler.CommandEvent) (err error) {
 	data := event.SlashCommandInteractionData()
 	videoID := videoIDRegex.FindString(data.String("video"))
-	messageBuilder := discord.NewMessageCreateBuilder()
+	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)
 	if videoID == "" {
 		return event.CreateMessage(messageBuilder.
 			SetContent("Cannot extract video ID from input.").
-			SetEphemeral(true).
 			Build())
-	}
-	if err = event.DeferCreateMessage(true); err != nil {
-		return err
 	}
 	rs, err := util.FetchVideoBranding(h.Bot.Client, videoID, true)
 	if err != nil {
 		if os.IsTimeout(err) {
-			_, err = event.CreateFollowupMessage(messageBuilder.
-				SetContent("DeArrow API failed to respond within 5 seconds.").
-				SetEphemeral(true).
+			return event.CreateMessage(messageBuilder.
+				SetContent("DeArrow API failed to respond within 2 seconds.").
 				Build())
-			return nil
 		}
-		return err
+		return
 	}
 	defer rs.Body.Close()
 	b, err := io.ReadAll(rs.Body)
 	if err != nil {
-		return err
+		return
 	}
 	var out bytes.Buffer
 	if err = json.Indent(&out, b, "", "  "); err != nil {
-		return err
+		return
 	}
 	content := fmt.Sprintf("```json\n%s\n```", out.String())
 	if len(content) > 4096 {
-		_, err = event.CreateFollowupMessage(messageBuilder.
+		return event.CreateMessage(messageBuilder.
 			SetContentf("Response is longer than 4096 chars (%d).", len(content)).
-			SetEphemeral(true).
 			Build())
-		return err
-	}
-	hide, ok := data.OptBool("hide")
-	if !ok {
-		hide = true
 	}
 	embedBuilder := discord.NewEmbedBuilder()
 	embedBuilder.SetColor(0x001BFF)
 	embedBuilder.SetDescription(content)
-	_, err = event.CreateFollowupMessage(messageBuilder.
+
+	hide, ok := data.OptBool("hide")
+	if !ok {
+		hide = true
+	}
+	return event.CreateMessage(messageBuilder.
 		SetEmbeds(embedBuilder.Build()).
 		SetEphemeral(hide).
 		Build())
-	return err
 }
 
 func (h *Handler) HandleModeGet(event *handler.CommandEvent) error {
@@ -85,14 +77,13 @@ func (h *Handler) HandleModeSet(event *handler.CommandEvent) (err error) {
 	data := event.SlashCommandInteractionData()
 	guildID := event.GuildID()
 	thumbnailMode := types.ThumbnailMode(data.Int("mode"))
-	err = h.Bot.Keystore.Set(guildID.String(), types.GuildData{
+	if err = h.Bot.Keystore.Set(guildID.String(), types.GuildData{
 		ThumbnailMode: thumbnailMode,
-	})
-	if err != nil {
-		return err
+	}); err != nil {
+		return
 	}
 	if err = jsonstore.Save(h.Bot.Keystore, h.Config.StoragePath); err != nil {
-		return err
+		return
 	}
 	return event.CreateMessage(discord.NewMessageCreateBuilder().
 		SetContentf("Mode has been set to **%s**.", thumbnailMode).

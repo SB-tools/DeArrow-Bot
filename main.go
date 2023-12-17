@@ -7,6 +7,16 @@ import (
 	"dearrow-thumbnails/types"
 	"dearrow-thumbnails/util"
 	"fmt"
+	"io"
+	"log/slog"
+	"net/http"
+	"net/url"
+	"os"
+	"os/signal"
+	"regexp"
+	"syscall"
+	"time"
+
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/cache"
@@ -21,15 +31,6 @@ import (
 	slogsentry "github.com/samber/slog-sentry"
 	"github.com/schollz/jsonstore"
 	"golang.org/x/exp/maps"
-	"io"
-	"log/slog"
-	"net/http"
-	"net/url"
-	"os"
-	"os/signal"
-	"regexp"
-	"syscall"
-	"time"
 )
 
 var (
@@ -83,7 +84,7 @@ func main() {
 
 	b := &internal.Bot{
 		Keystore: k,
-		Client:   &http.Client{Timeout: 5 * time.Second},
+		Client:   &http.Client{Timeout: 2 * time.Second}, // this is quite ambitious
 	}
 	h := handlers.NewHandler(b, c)
 
