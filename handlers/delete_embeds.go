@@ -28,7 +28,7 @@ func (h *Handler) HandleDeleteEmbeds(event *handler.CommandEvent) (err error) {
 			Build())
 	}
 	if err = rest.DeleteMessage(channelID, message.ID); err != nil {
-		return err
+		return
 	}
 	return event.CreateMessage(messageBuilder.
 		SetContent("Embeds have been deleted.").
