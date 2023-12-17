@@ -5,13 +5,14 @@ import (
 	"dearrow-thumbnails/types"
 	"dearrow-thumbnails/util"
 	"fmt"
+	"io"
+	"os"
+	"regexp"
+
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/disgoorg/json"
 	"github.com/schollz/jsonstore"
-	"io"
-	"os"
-	"regexp"
 )
 
 var (
@@ -56,11 +57,16 @@ func (h *Handler) HandleBranding(event *handler.CommandEvent) (err error) {
 			Build())
 		return err
 	}
+	hide, ok := data.OptBool("hide")
+	if !ok {
+		hide = true
+	}
 	embedBuilder := discord.NewEmbedBuilder()
 	embedBuilder.SetColor(0x001BFF)
 	embedBuilder.SetDescription(content)
 	_, err = event.CreateFollowupMessage(messageBuilder.
 		SetEmbeds(embedBuilder.Build()).
+		SetEphemeral(hide).
 		Build())
 	return err
 }
