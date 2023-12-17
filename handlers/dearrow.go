@@ -22,10 +22,11 @@ var (
 func (h *Handler) HandleBranding(event *handler.CommandEvent) (err error) {
 	data := event.SlashCommandInteractionData()
 	videoID := videoIDRegex.FindString(data.String("video"))
-	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)
+	messageBuilder := discord.NewMessageCreateBuilder()
 	if videoID == "" {
 		return event.CreateMessage(messageBuilder.
 			SetContent("Cannot extract video ID from input.").
+			SetEphemeral(true).
 			Build())
 	}
 	if err = event.DeferCreateMessage(true); err != nil {
@@ -36,6 +37,7 @@ func (h *Handler) HandleBranding(event *handler.CommandEvent) (err error) {
 		if os.IsTimeout(err) {
 			_, err = event.CreateFollowupMessage(messageBuilder.
 				SetContent("DeArrow API failed to respond within 5 seconds.").
+				SetEphemeral(true).
 				Build())
 			return nil
 		}
@@ -54,6 +56,7 @@ func (h *Handler) HandleBranding(event *handler.CommandEvent) (err error) {
 	if len(content) > 4096 {
 		_, err = event.CreateFollowupMessage(messageBuilder.
 			SetContentf("Response is longer than 4096 chars (%d).", len(content)).
+			SetEphemeral(true).
 			Build())
 		return err
 	}
