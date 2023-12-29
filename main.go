@@ -10,7 +10,6 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"regexp"
@@ -162,8 +161,7 @@ func replaceYouTubeEmbeds(bot *internal.Bot, event *events.GenericGuildMessage) 
 		if provider == nil || provider.Name != "YouTube" {
 			continue
 		}
-		u, _ := url.Parse(embed.URL)
-		videoID := u.Query().Get("v")
+		videoID := util.ParseVideoID(embed)
 		if videoID == "" {
 			continue
 		}

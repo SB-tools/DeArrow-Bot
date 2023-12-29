@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"bytes"
-	"dearrow-thumbnails/types"
 	"dearrow-thumbnails/util"
 	"fmt"
 	"io"
@@ -12,16 +11,38 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/disgoorg/json"
-	"github.com/schollz/jsonstore"
 )
 
 var (
 	videoIDRegex = regexp.MustCompile(`[a-zA-Z0-9-_]{11}`)
 )
 
-func (h *Handler) HandleBranding(event *handler.CommandEvent) (err error) {
+func (h *Handler) HandleBrandingSlash(event *handler.CommandEvent) error {
 	data := event.SlashCommandInteractionData()
 	videoID := videoIDRegex.FindString(data.String("video"))
+	hide, ok := data.OptBool("hide")
+	if !ok {
+		hide = true
+	}
+	return h.handleBranding(event, videoID, hide)
+}
+
+func (h *Handler) HandleBrandingContext(event *handler.CommandEvent) error {
+	var videoID string
+
+	data := event.MessageCommandInteractionData()
+	message := data.TargetMessage()
+	embeds := message.Embeds
+	if len(embeds) != 0 {
+		videoID = util.ParseVideoID(embeds[0])
+	}
+	if videoID == "" {
+		videoID = videoIDRegex.FindString(message.Content)
+	}
+	return h.handleBranding(event, videoID, true)
+}
+
+func (h *Handler) handleBranding(event *handler.CommandEvent, videoID string, hide bool) error {
 	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)
 	if videoID == "" {
 		return event.CreateMessage(messageBuilder.
@@ -35,16 +56,16 @@ func (h *Handler) HandleBranding(event *handler.CommandEvent) (err error) {
 				SetContent("DeArrow API failed to respond within 2 seconds.").
 				Build())
 		}
-		return
+		return err
 	}
 	defer rs.Body.Close()
 	b, err := io.ReadAll(rs.Body)
 	if err != nil {
-		return
+		return err
 	}
 	var out bytes.Buffer
-	if err = json.Indent(&out, b, "", "  "); err != nil {
-		return
+	if err := json.Indent(&out, b, "", "  "); err != nil {
+		return err
 	}
 	content := fmt.Sprintf("```json\n%s\n```", out.String())
 	if len(content) > 4096 {
@@ -55,38 +76,8 @@ func (h *Handler) HandleBranding(event *handler.CommandEvent) (err error) {
 	embedBuilder := discord.NewEmbedBuilder()
 	embedBuilder.SetColor(0x001BFF)
 	embedBuilder.SetDescription(content)
-
-	hide, ok := data.OptBool("hide")
-	if !ok {
-		hide = true
-	}
 	return event.CreateMessage(messageBuilder.
 		SetEmbeds(embedBuilder.Build()).
 		SetEphemeral(hide).
-		Build())
-}
-
-func (h *Handler) HandleModeGet(event *handler.CommandEvent) error {
-	return event.CreateMessage(discord.NewMessageCreateBuilder().
-		SetContentf("Current mode is set to **%s**.", h.Bot.GetGuildData(*event.GuildID()).ThumbnailMode).
-		SetEphemeral(true).
-		Build())
-}
-
-func (h *Handler) HandleModeSet(event *handler.CommandEvent) (err error) {
-	data := event.SlashCommandInteractionData()
-	guildID := event.GuildID()
-	thumbnailMode := types.ThumbnailMode(data.Int("mode"))
-	if err = h.Bot.Keystore.Set(guildID.String(), types.GuildData{
-		ThumbnailMode: thumbnailMode,
-	}); err != nil {
-		return
-	}
-	if err = jsonstore.Save(h.Bot.Keystore, h.Config.StoragePath); err != nil {
-		return
-	}
-	return event.CreateMessage(discord.NewMessageCreateBuilder().
-		SetContentf("Mode has been set to **%s**.", thumbnailMode).
-		SetEphemeral(true).
 		Build())
 }

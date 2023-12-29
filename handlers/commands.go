@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"dearrow-thumbnails/internal"
+	"log/slog"
+
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/lmittmann/tint"
-	"log/slog"
 )
 
 func NewHandler(b *internal.Bot, c *internal.Config) *Handler {
@@ -25,15 +26,18 @@ func NewHandler(b *internal.Bot, c *internal.Config) *Handler {
 		Router: mux,
 	}
 	handlers.Group(func(r handler.Router) {
-		r.Route("/dearrow", func(r handler.Router) {
-			r.Route("/mode", func(r handler.Router) {
-				r.Command("/get", handlers.HandleModeGet)
-				r.Command("/set", handlers.HandleModeSet)
-			})
-			r.Command("/branding", handlers.HandleBranding)
+		r.Route("/mode", func(r handler.Router) {
+			r.Command("/get", handlers.HandleModeGet)
+			r.Command("/set", handlers.HandleModeSet)
 		})
 	})
+	handlers.Group(func(r handler.Router) {
+		r.Command("/branding", handlers.HandleBrandingSlash)
+		r.Command("/Fetch branding", handlers.HandleBrandingContext)
+	})
+
 	handlers.Command("/Delete embeds", handlers.HandleDeleteEmbeds)
+	//handlers.Command("/Download video", handlers.HandleDownloadVideo)
 	return handlers
 }
 
