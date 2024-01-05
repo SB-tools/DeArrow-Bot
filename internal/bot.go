@@ -1,13 +1,14 @@
 package internal
 
 import (
-	"dearrow-thumbnails/types"
+	"dearrow-bot/types"
 	"errors"
+	"log/slog"
+	"net/http"
+
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/lmittmann/tint"
 	"github.com/schollz/jsonstore"
-	"log/slog"
-	"net/http"
 )
 
 type Bot struct {

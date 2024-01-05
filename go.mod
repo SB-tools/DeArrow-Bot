@@ -1,4 +1,4 @@
-module dearrow-thumbnails
+module dearrow-bot
 
 go 1.21
 

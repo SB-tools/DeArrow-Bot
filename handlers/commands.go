@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"dearrow-thumbnails/internal"
+	"dearrow-bot/internal"
 	"log/slog"
 
 	"github.com/disgoorg/disgo/discord"

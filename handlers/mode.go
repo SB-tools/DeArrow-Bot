@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"dearrow-thumbnails/types"
+	"dearrow-bot/types"
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"

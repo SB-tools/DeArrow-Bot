@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"dearrow-thumbnails/handlers"
-	"dearrow-thumbnails/internal"
-	"dearrow-thumbnails/types"
-	"dearrow-thumbnails/util"
+	"dearrow-bot/handlers"
+	"dearrow-bot/internal"
+	"dearrow-bot/types"
+	"dearrow-bot/util"
 	"fmt"
 	"io"
 	"log/slog"

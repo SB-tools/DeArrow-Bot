@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"bytes"
-	"dearrow-thumbnails/util"
+	"dearrow-bot/util"
 	"fmt"
 	"io"
 	"os"
