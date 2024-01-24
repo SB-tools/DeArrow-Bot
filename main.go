@@ -40,7 +40,7 @@ var (
 )
 
 const (
-	dearrowThumbnailApiURL = "https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=%s&time=%f&generateNow=true"
+	dearrowThumbnailApiURL = "https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=%s&time=%.5f&generateNow=true"
 )
 
 func main() {
