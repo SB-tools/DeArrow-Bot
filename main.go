@@ -62,7 +62,7 @@ func main() {
 
 	logger := slog.New(slogmulti.Fanout(
 		tint.NewHandler(os.Stdout, &tint.Options{
-			Level: slog.LevelDebug,
+			Level: slog.LevelInfo,
 		}),
 		slogsentry.Option{Level: slog.LevelWarn}.NewSentryHandler()))
 	slog.SetDefault(logger)
