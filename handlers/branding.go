@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	videoIDRegex = regexp.MustCompile(`[a-zA-Z0-9-_]{11}`)
+	videoIDRegex = regexp.MustCompile(`\b[a-zA-Z0-9-_]{11}\b`)
 )
 
 func (h *Handler) HandleBrandingSlash(event *handler.CommandEvent) error {
