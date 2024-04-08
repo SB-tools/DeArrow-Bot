@@ -5,6 +5,7 @@ import (
 	"dearrow-bot/util"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"regexp"
 
@@ -57,6 +58,12 @@ func (h *Handler) handleBranding(event *handler.CommandEvent, videoID string, hi
 				Build())
 		}
 		return err
+	}
+	status := rs.StatusCode
+	if status != http.StatusOK && status != http.StatusNotFound {
+		return event.CreateMessage(messageBuilder.
+			SetContentf("DeArrow API returned a non-OK code: **%d**", status).
+			Build())
 	}
 	defer rs.Body.Close()
 	b, err := io.ReadAll(rs.Body)
