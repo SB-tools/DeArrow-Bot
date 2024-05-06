@@ -99,7 +99,10 @@ func main() {
 				replaceYouTubeEmbeds(b, event.GenericGuildMessage)
 			},
 			OnGuildMessageUpdate: func(event *events.GuildMessageUpdate) {
-				replaceYouTubeEmbeds(b, event.GenericGuildMessage)
+				edited := event.Message.EditedTimestamp
+				if edited != nil && time.Since(*edited).Seconds() <= 3 {
+					replaceYouTubeEmbeds(b, event.GenericGuildMessage)
+				}
 			},
 			OnGuildMessageDelete: func(event *events.GuildMessageDelete) {
 				messageID := event.MessageID
