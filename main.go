@@ -99,8 +99,7 @@ func main() {
 				replaceYouTubeEmbeds(b, event.GenericGuildMessage)
 			},
 			OnGuildMessageUpdate: func(event *events.GuildMessageUpdate) {
-				edited := event.Message.EditedTimestamp
-				if edited != nil && time.Since(*edited).Seconds() <= 3 {
+				if time.Since(event.Message.CreatedAt).Hours() <= 1 { // prevent ghost edits because discord
 					replaceYouTubeEmbeds(b, event.GenericGuildMessage)
 				}
 			},
