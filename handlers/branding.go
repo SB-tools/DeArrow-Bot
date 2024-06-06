@@ -50,7 +50,7 @@ func (h *Handler) handleBranding(event *handler.CommandEvent, videoID string, hi
 			SetContent("Cannot extract video ID from input.").
 			Build())
 	}
-	rs, err := util.FetchVideoBranding(h.Bot.Client, videoID, true)
+	rs, err := h.Bot.DeArrow.FetchBrandingRaw(videoID, true)
 	if err != nil {
 		if os.IsTimeout(err) {
 			return event.CreateMessage(messageBuilder.

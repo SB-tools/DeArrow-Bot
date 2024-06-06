@@ -2,17 +2,15 @@ package main
 
 import (
 	"context"
+	"dearrow-bot/dearrow"
 	"dearrow-bot/handlers"
 	"dearrow-bot/internal"
-	"dearrow-bot/types"
 	"dearrow-bot/util"
 	"fmt"
 	"io"
 	"log/slog"
-	"net/http"
 	"os"
 	"os/signal"
-	"regexp"
 	"syscall"
 	"time"
 
@@ -29,18 +27,15 @@ import (
 	slogmulti "github.com/samber/slog-multi"
 	slogsentry "github.com/samber/slog-sentry"
 	"github.com/schollz/jsonstore"
-	"golang.org/x/exp/maps"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
-	arrowRegex  = regexp.MustCompile(`(^|\s)>(\S)`)
-	priorityKey = os.Getenv("DEARROW_PRIORITY_KEY")
-	environment = os.Getenv("DEARROW_ENVIRONMENT")
-	replyMap    = make(map[snowflake.ID]snowflake.ID)
+	replyMap = make(map[snowflake.ID]snowflake.ID)
 )
 
 const (
-	dearrowThumbnailApiURL = "https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=%s&time=%.5f&generateNow=true"
+	cleanPeriod = 24 * time.Hour
 )
 
 func main() {
@@ -48,7 +43,7 @@ func main() {
 		Dsn:           os.Getenv("SENTRY_DSN"),
 		EnableTracing: false,
 		BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
-			if environment == "PROD" { // only log events in prod
+			if os.Getenv("DEARROW_ENVIRONMENT") == "PROD" { // only log events in prod
 				return event
 			}
 			return nil
@@ -81,9 +76,10 @@ func main() {
 		DeArrowUserID: dearrowUserID,
 	}
 
+	dearrowClient := dearrow.New(util.NewBrandingClient(), util.NewThumbnailClient())
 	b := &internal.Bot{
 		Keystore: k,
-		Client:   &http.Client{Timeout: 2 * time.Second}, // this is quite ambitious
+		DeArrow:  dearrowClient,
 	}
 	h := handlers.NewHandler(b, c)
 
@@ -95,22 +91,21 @@ func main() {
 				return entity.User.ID == dearrowUserID
 			})),
 		bot.WithEventListeners(h, &events.ListenerAdapter{
-			OnGuildMessageCreate: func(event *events.GuildMessageCreate) {
-				replaceYouTubeEmbeds(b, event.GenericGuildMessage)
+			OnGuildMessageCreate: func(ev *events.GuildMessageCreate) {
+				messageListener(ev.GenericGuildMessage, b)
 			},
-			OnGuildMessageUpdate: func(event *events.GuildMessageUpdate) {
-				if time.Since(event.Message.ID.Time()).Hours() <= 1 { // prevent ghost edits because discord
-					replaceYouTubeEmbeds(b, event.GenericGuildMessage)
+			OnGuildMessageUpdate: func(ev *events.GuildMessageUpdate) {
+				if time.Since(ev.Message.ID.Time()).Hours() <= 1 { // prevent ghost edits because discord
+					messageListener(ev.GenericGuildMessage, b)
 				}
 			},
-			OnGuildMessageDelete: func(event *events.GuildMessageDelete) {
-				messageID := event.MessageID
-				if replyID, ok := replyMap[messageID]; ok {
-					rest := event.Client().Rest()
-					if err := rest.DeleteMessage(event.ChannelID, replyID); err != nil {
-						slog.Error("there was an error while deleting a reply", slog.Any("reply.id", replyID), tint.Err(err))
+			OnGuildMessageDelete: func(ev *events.GuildMessageDelete) {
+				if replyID, ok := replyMap[ev.MessageID]; ok {
+					rest := ev.Client().Rest()
+					if err := rest.DeleteMessage(ev.ChannelID, replyID); err != nil {
+						slog.Error("error while deleting a reply", slog.Any("reply.id", replyID), tint.Err(err))
 					}
-					delete(replyMap, messageID)
+					delete(replyMap, ev.MessageID)
 				}
 			},
 		}))
@@ -124,7 +119,13 @@ func main() {
 		panic(err)
 	}
 
-	startCleanScheduler()
+	ticker := time.NewTicker(cleanPeriod)
+	go func() {
+		for {
+			<-ticker.C
+			clear(replyMap)
+		}
+	}()
 
 	slog.Info("dearrow bot is now running.")
 	s := make(chan os.Signal, 1)
@@ -132,33 +133,33 @@ func main() {
 	<-s
 }
 
-func replaceYouTubeEmbeds(bot *internal.Bot, event *events.GenericGuildMessage) {
-	message := event.Message
-	embeds := message.Embeds
-	if len(embeds) == 0 {
+func messageListener(ev *events.GenericGuildMessage, bot *internal.Bot) {
+	if len(ev.Message.Embeds) == 0 {
 		return
 	}
-	originalMessageID := message.ID
-	if _, ok := replyMap[originalMessageID]; ok || message.Author.Bot {
+	if _, ok := replyMap[ev.MessageID]; ok || ev.Message.Author.Bot { // ignore messages which have already been replied to or bots
 		return
 	}
-	channel, ok := event.Channel()
+	channel, ok := ev.Channel()
 	if !ok {
-		slog.Warn("channel missing in cache", slog.Any("channel.id", event.ChannelID))
+		slog.Warn("channel missing in cache", slog.Any("channel.id", ev.ChannelID))
 		return
 	}
-	client := event.Client()
+	client := ev.Client()
 	caches := client.Caches()
-	selfMember, _ := caches.SelfMember(event.GuildID)
+	selfMember, ok := caches.SelfMember(ev.GuildID)
+	if !ok {
+		slog.Warn("self member missing in cache", slog.Any("guild.id", ev.GuildID))
+		return
+	}
 	permissions := caches.MemberPermissionsInChannel(channel, selfMember)
 	if permissions.Missing(discord.PermissionSendMessages, discord.PermissionManageMessages, discord.PermissionEmbedLinks) {
 		return
 	}
-	videoDataMap := make(map[string]types.DeArrowEmbedData)
-	rest := client.Rest()
-	httpClient := rest.HTTPClient()
-	thumbnailMode := bot.GetGuildData(event.GuildID).ThumbnailMode
-	for _, embed := range embeds {
+	guildData := bot.GetGuildData(ev.GuildID)
+
+	replacementMap := make(map[string]*dearrow.ReplacementData)
+	for _, embed := range ev.Message.Embeds {
 		provider := embed.Provider
 		if provider == nil || provider.Name != "YouTube" {
 			continue
@@ -167,150 +168,73 @@ func replaceYouTubeEmbeds(bot *internal.Bot, event *events.GenericGuildMessage) 
 		if videoID == "" {
 			continue
 		}
-		if _, ok := videoDataMap[videoID]; ok {
+		if _, ok := replacementMap[videoID]; ok { // ignore videos that already have a replacement
 			continue
 		}
-		func() {
-			rs, err := util.FetchVideoBranding(httpClient, videoID, false)
+		branding, err := bot.DeArrow.FetchBranding(videoID)
+		if err != nil {
+			return // fail the entire process if any branding request fails for completeness
+		}
+		data := branding.ToReplacementData(videoID, guildData, embed)
+		if data != nil {
+			replacementMap[videoID] = data
+		}
+	}
+	if len(replacementMap) == 0 { // no videos to replace, exit
+		return
+	}
+
+	replyBuilder := discord.NewMessageCreateBuilder()
+	replyBuilder.SetMessageReferenceByID(ev.MessageID)
+	replyBuilder.SetAllowedMentions(&discord.AllowedMentions{})
+
+	eg, ctx := errgroup.WithContext(context.Background())
+	c := make(chan io.ReadCloser, len(replacementMap))
+loop:
+	for videoID, data := range replacementMap {
+		select {
+		case <-ctx.Done():
+			break loop
+		default:
+
+		}
+
+		replyBuilder.AddEmbeds(data.ToEmbed())
+
+		fetchFunc := data.ReplacementThumbnailFunc
+		if fetchFunc == nil { // no need to replace the thumbnail
+			continue
+		}
+		eg.Go(func() error {
+			thumbnail, err := fetchFunc(bot.DeArrow)
 			if err != nil {
-				slog.Error("there was an error while running a branding request", slog.String("video.id", videoID), tint.Err(err))
-				return
+				return err
 			}
-			status := rs.StatusCode
-			if status != http.StatusOK && status != http.StatusNotFound {
-				slog.Warn("received an unexpected code from a branding response", slog.Int("status.code", status), slog.String("video.id", videoID))
-				return
-			}
-			defer rs.Body.Close()
-			var brandingResponse BrandingResponse
-			if err := json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
-				slog.Error("there was an error while decoding a branding response", slog.Int("status.code", status), slog.String("video.id", videoID), tint.Err(err))
-				return
-			}
-			titles := brandingResponse.Titles
-			thumbnails := brandingResponse.Thumbnails
-			embedBuilder := discord.EmbedBuilder{Embed: embed}
-			embedBuilder.SetImage(embed.Thumbnail.URL)
-			embedBuilder.SetThumbnail("")
-			embedBuilder.SetDescription("")
-			replaceTitle := len(titles) != 0 && !titles[0].Original && titles[0].Votes > -1
-			if replaceTitle {
-				embedBuilder.SetFooterText("Original title: " + embed.Title)
-				embedBuilder.SetTitle(arrowRegex.ReplaceAllString(titles[0].Title, "$1$2"))
-			}
-			embedData := types.DeArrowEmbedData{}
-			if len(thumbnails) != 0 {
-				if !thumbnails[0].Original {
-					embedData.ReplacementThumbnailURL = formatThumbnailURL(videoID, thumbnails[0].Timestamp)
-				}
-			} else {
-				switch thumbnailMode {
-				case types.ThumbnailModeRandomTime:
-					videoDuration := brandingResponse.VideoDuration
-					if videoDuration != nil && *videoDuration != 0 {
-						duration := *videoDuration
-						embedData.ReplacementThumbnailURL = formatThumbnailURL(videoID, brandingResponse.RandomTime*duration)
-					} else if !replaceTitle {
-						return
-					}
-				case types.ThumbnailModeBlank:
-					embedBuilder.SetImage("")
-				case types.ThumbnailModeOriginal:
-					if !replaceTitle {
-						return
-					}
-				}
-			}
-			if embedData.ReplacementThumbnailURL != "" {
-				embedBuilder.SetImagef("attachment://thumbnail-%s.webp", videoID)
-			}
-			embedData.Embed = embedBuilder.Build()
-			videoDataMap[videoID] = embedData
-		}()
+			c <- thumbnail
+			replyBuilder.AddFile(fmt.Sprintf("thumbnail-%s.webp", videoID), "", thumbnail)
+			return nil
+		})
 	}
-	if len(videoDataMap) == 0 {
+	if err := eg.Wait(); err != nil {
 		return
 	}
-	channelID := event.ChannelID
-	var dearrowEmbeds []discord.Embed
-	for _, data := range maps.Values(videoDataMap) {
-		dearrowEmbeds = append(dearrowEmbeds, data.Embed)
+	close(c)
+
+	reply, err := client.Rest().CreateMessage(ev.ChannelID, replyBuilder.Build())
+
+	for closer := range c {
+		closer.Close()
 	}
-	dearrowReply, err := rest.CreateMessage(channelID, discord.NewMessageCreateBuilder().
-		SetEmbeds(dearrowEmbeds...).
-		SetMessageReferenceByID(originalMessageID).
-		SetAllowedMentions(&discord.AllowedMentions{}).
-		Build())
+
 	if err != nil {
-		slog.Error("there was an error while creating a message in channel", slog.Any("channel.id", channelID), tint.Err(err))
+		slog.Error("error while sending dearrow reply", slog.Any("channel.id", ev.ChannelID), slog.Any("message.id", ev.MessageID), tint.Err(err))
 		return
 	}
-	replyMap[originalMessageID] = dearrowReply.ID
-	_, err = rest.UpdateMessage(channelID, originalMessageID, discord.NewMessageUpdateBuilder().
-		SetSuppressEmbeds(true).
-		Build())
-	if err != nil {
-		slog.Error("there was an error while suppressing embeds", tint.Err(err))
-		return
-	}
-	updateBuilder := discord.NewMessageUpdateBuilder()
-	updateBuilder.SetEmbeds(dearrowEmbeds...)
-	var bodies []io.ReadCloser
-	for videoID, data := range videoDataMap {
-		thumbnailURL := data.ReplacementThumbnailURL
-		if thumbnailURL == "" {
-			continue
-		}
-		req, err := http.NewRequest(http.MethodGet, thumbnailURL, nil)
-		if err != nil {
-			slog.Error("there was an error while creating a request for a thumbnail", slog.String("thumbnail.url", thumbnailURL), tint.Err(err))
-			return
-		}
-		req.Header.Add("Authorization", priorityKey)
-		rs, err := httpClient.Do(req)
-		if err != nil {
-			slog.Error("there was an error while downloading a thumbnail", slog.String("thumbnail.url", thumbnailURL), tint.Err(err))
-			continue
-		}
-		if rs.StatusCode != http.StatusOK {
-			slog.Warn("received an unexpected code from a thumbnail response", slog.Int("status.code", rs.StatusCode), slog.String("video.id", videoID), slog.String("thumbnail.url", thumbnailURL))
-			continue
-		}
-		bodies = append(bodies, rs.Body)
-		updateBuilder.AddFile(fmt.Sprintf("thumbnail-%s.webp", videoID), "", rs.Body)
-	}
-	if len(bodies) == 0 {
-		return
-	}
-	if _, err := rest.UpdateMessage(channelID, dearrowReply.ID, updateBuilder.Build()); err != nil {
-		slog.Error("there was an error while editing an embed", slog.Any("channel.id", channelID), tint.Err(err))
-	}
-	for _, body := range bodies {
-		body.Close()
-	}
-}
+	replyMap[ev.MessageID] = reply.ID
 
-func startCleanScheduler() {
-	time.AfterFunc(24*time.Hour, func() {
-		clear(replyMap)
-		startCleanScheduler()
-	})
-}
-
-type BrandingResponse struct {
-	Titles []struct {
-		Title    string `json:"title"`
-		Original bool   `json:"original"`
-		Votes    int    `json:"votes"`
-	} `json:"titles"`
-	Thumbnails []struct {
-		Timestamp float64 `json:"timestamp"`
-		Original  bool    `json:"original"`
-	} `json:"thumbnails"`
-	RandomTime    float64  `json:"randomTime"`
-	VideoDuration *float64 `json:"videoDuration"`
-}
-
-func formatThumbnailURL(videoID string, timestamp float64) string {
-	return fmt.Sprintf(dearrowThumbnailApiURL, videoID, timestamp)
+	if _, err := client.Rest().UpdateMessage(ev.ChannelID, ev.MessageID, discord.MessageUpdate{
+		Flags: json.Ptr(discord.MessageFlagSuppressEmbeds),
+	}); err != nil {
+		slog.Error("error while suppressing embeds", slog.Any("channel.id", ev.ChannelID), slog.Any("message.id", ev.MessageID), tint.Err(err))
+	}
 }

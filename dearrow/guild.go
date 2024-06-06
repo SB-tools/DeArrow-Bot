@@ -1,14 +1,7 @@
-package types
-
-import "github.com/disgoorg/disgo/discord"
+package dearrow
 
 type GuildData struct {
 	ThumbnailMode ThumbnailMode `json:"thumbnail_mode"`
-}
-
-type DeArrowEmbedData struct {
-	Embed                   discord.Embed
-	ReplacementThumbnailURL string
 }
 
 type ThumbnailMode int
