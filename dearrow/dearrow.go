@@ -83,17 +83,19 @@ type BrandingResponse struct {
 		Title    string `json:"title"`
 		Original bool   `json:"original"`
 		Votes    int    `json:"votes"`
+		Locked   bool   `json:"locked"`
 	} `json:"titles"`
 	Thumbnails []struct {
-		Timestamp float64 `json:"timestamp"`
-		Original  bool    `json:"original"`
+		Timestamp *float64 `json:"timestamp"`
+		Original  bool     `json:"original"`
+		Locked    bool     `json:"locked"`
 	} `json:"thumbnails"`
 	RandomTime    float64  `json:"randomTime"`
 	VideoDuration *float64 `json:"videoDuration"`
 }
 
 func (b *BrandingResponse) ToReplacementData(videoID string, guildData GuildData, embed discord.Embed) *ReplacementData {
-	builder := NewReplacementBuilder()
+	builder := &ReplacementBuilder{}
 	builder.WithVideoID(videoID)
 
 	embedBuilder := &discord.EmbedBuilder{Embed: embed}
@@ -117,15 +119,23 @@ func (b *BrandingResponse) ToReplacementData(videoID string, guildData GuildData
 }
 
 func (b *BrandingResponse) replacementTitle() string {
-	if len(b.Titles) != 0 && !b.Titles[0].Original && b.Titles[0].Votes > -1 {
-		return b.Titles[0].Title
+	if len(b.Titles) != 0 && b.Titles[0].Votes > -1 {
+		title := b.Titles[0]
+		if title.Original && !title.Locked {
+			return ""
+		}
+		return title.Title
 	}
 	return ""
 }
 
 func (b *BrandingResponse) replacementTimestamp(mode ThumbnailMode, embedBuilder *discord.EmbedBuilder) float64 {
-	if len(b.Thumbnails) != 0 && !b.Thumbnails[0].Original {
-		return b.Thumbnails[0].Timestamp
+	if len(b.Thumbnails) != 0 {
+		thumbnail := b.Thumbnails[0]
+		if thumbnail.Original && !thumbnail.Locked || thumbnail.Timestamp == nil {
+			return -1
+		}
+		return *thumbnail.Timestamp
 	}
 	switch mode {
 	case ThumbnailModeRandomTime:
@@ -135,14 +145,15 @@ func (b *BrandingResponse) replacementTimestamp(mode ThumbnailMode, embedBuilder
 		}
 	case ThumbnailModeBlank:
 		embedBuilder.SetImage("")
-		return -1
 	default: // we can ignore ThumbnailModeOriginal
 	}
 	return -1
 }
 
+type ThumbnailFunc func(dearrow *DeArrow) (io.ReadCloser, error)
+
 type ReplacementData struct {
-	ReplacementThumbnailFunc func(dearrow *DeArrow) (io.ReadCloser, error)
+	ReplacementThumbnailFunc ThumbnailFunc
 
 	Embed discord.Embed
 }
@@ -151,14 +162,10 @@ func (d *ReplacementData) ToEmbed() discord.Embed {
 	return d.Embed
 }
 
-func NewReplacementBuilder() *ReplacementBuilder {
-	return &ReplacementBuilder{}
-}
-
 type ReplacementBuilder struct {
 	videoID string
 
-	thumbnailFunc func(dearrow *DeArrow) (io.ReadCloser, error)
+	thumbnailFunc ThumbnailFunc
 
 	embedBuilder *discord.EmbedBuilder
 }
