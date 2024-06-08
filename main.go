@@ -103,12 +103,10 @@ func main() {
 				if replyID, ok := replyMap[ev.MessageID]; ok {
 					rest := ev.Client().Rest()
 					if err := rest.DeleteMessage(ev.ChannelID, replyID); err != nil {
-						slog.Error(" error while deleting a reply",
+						slog.Error("error while deleting a reply",
 							slog.Any("reply.id", replyID),
 							slog.Any("parent.id", ev.MessageID),
 							slog.Any("channel.id", ev.ChannelID),
-							tint.Err(err))
-					}
 					delete(replyMap, ev.MessageID)
 				}
 			},
