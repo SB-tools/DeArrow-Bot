@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"dearrow-bot/types"
+	"dearrow-bot/dearrow"
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
@@ -18,8 +18,8 @@ func (h *Handler) HandleModeGet(event *handler.CommandEvent) error {
 func (h *Handler) HandleModeSet(event *handler.CommandEvent) (err error) {
 	data := event.SlashCommandInteractionData()
 	guildID := event.GuildID()
-	thumbnailMode := types.ThumbnailMode(data.Int("mode"))
-	if err = h.Bot.Keystore.Set(guildID.String(), types.GuildData{
+	thumbnailMode := dearrow.ThumbnailMode(data.Int("mode"))
+	if err = h.Bot.Keystore.Set(guildID.String(), dearrow.GuildData{
 		ThumbnailMode: thumbnailMode,
 	}); err != nil {
 		return
