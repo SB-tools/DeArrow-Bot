@@ -108,7 +108,11 @@ func main() {
 				if replyID, ok := replyMap[messageID]; ok {
 					rest := event.Client().Rest()
 					if err := rest.DeleteMessage(event.ChannelID, replyID); err != nil {
-						slog.Error("there was an error while deleting a reply", slog.Any("reply.id", replyID), tint.Err(err))
+						slog.Error("there was an error while deleting a reply",
+							slog.Any("reply.id", replyID),
+							slog.Any("parent.id", messageID),
+							slog.Any("channel.id", event.ChannelID),
+							tint.Err(err))
 					}
 					delete(replyMap, messageID)
 				}
@@ -273,7 +277,11 @@ func replaceYouTubeEmbeds(bot *internal.Bot, event *events.GenericGuildMessage) 
 			continue
 		}
 		if rs.StatusCode != http.StatusOK {
-			slog.Warn("received an unexpected code from a thumbnail response", slog.Int("status.code", rs.StatusCode), slog.String("video.id", videoID), slog.String("thumbnail.url", thumbnailURL))
+			slog.Warn("received an unexpected code from a thumbnail response",
+				slog.Int("status.code", rs.StatusCode),
+				slog.String("failure.reason", rs.Header.Get("X-Failure-Reason")),
+				slog.String("video.id", videoID),
+				slog.String("thumbnail.url", thumbnailURL))
 			continue
 		}
 		bodies = append(bodies, rs.Body)
