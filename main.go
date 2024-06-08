@@ -107,6 +107,8 @@ func main() {
 							slog.Any("reply.id", replyID),
 							slog.Any("parent.id", ev.MessageID),
 							slog.Any("channel.id", ev.ChannelID),
+							tint.Err(err))
+					}
 					delete(replyMap, ev.MessageID)
 				}
 			},
