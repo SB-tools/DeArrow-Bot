@@ -95,14 +95,10 @@ type BrandingResponse struct {
 }
 
 func (b *BrandingResponse) ToReplacementData(videoID string, guildData GuildData, embed discord.Embed) *ReplacementData {
-	builder := &ReplacementBuilder{}
-	builder.WithVideoID(videoID)
-
 	embedBuilder := &discord.EmbedBuilder{Embed: embed}
 	embedBuilder.SetImage(embed.Thumbnail.URL)
 	embedBuilder.SetThumbnail("")
 	embedBuilder.SetDescription("")
-	builder.WithEmbedBuilder(embedBuilder)
 
 	title := b.replacementTitle()
 	timestamp := b.replacementTimestamp(guildData.ThumbnailMode, embedBuilder)
@@ -110,12 +106,16 @@ func (b *BrandingResponse) ToReplacementData(videoID string, guildData GuildData
 		return nil
 	}
 	if title != "" {
-		builder.SetTitle(title)
+		embedBuilder.SetFooterText("Original title: " + embed.Title)
+		embedBuilder.SetTitle(arrowRegex.ReplaceAllString(title, "$1$2"))
 	}
 	if timestamp != -1 {
-		builder.SetTimestamp(timestamp)
+		embedBuilder.SetImagef("attachment://thumbnail-%s.webp", videoID)
 	}
-	return builder.Build()
+	return &ReplacementData{
+		Timestamp: timestamp,
+		Embed:     embedBuilder.Build(),
+	}
 }
 
 func (b *BrandingResponse) replacementTitle() string {
@@ -150,55 +150,14 @@ func (b *BrandingResponse) replacementTimestamp(mode ThumbnailMode, embedBuilder
 	return -1
 }
 
-type ThumbnailFunc func(dearrow *DeArrow) (io.ReadCloser, error)
-
 type ReplacementData struct {
-	ReplacementThumbnailFunc ThumbnailFunc
+	Timestamp float64
 
 	Embed discord.Embed
 }
 
 func (d *ReplacementData) ToEmbed() discord.Embed {
 	return d.Embed
-}
-
-type ReplacementBuilder struct {
-	videoID string
-
-	thumbnailFunc ThumbnailFunc
-
-	embedBuilder *discord.EmbedBuilder
-}
-
-func (b *ReplacementBuilder) WithVideoID(videoID string) *ReplacementBuilder {
-	b.videoID = videoID
-	return b
-}
-
-func (b *ReplacementBuilder) WithEmbedBuilder(embedBuilder *discord.EmbedBuilder) *ReplacementBuilder {
-	b.embedBuilder = embedBuilder
-	return b
-}
-
-func (b *ReplacementBuilder) SetTitle(title string) *ReplacementBuilder {
-	b.embedBuilder.SetFooterText("Original title: " + b.embedBuilder.Title)
-	b.embedBuilder.SetTitle(arrowRegex.ReplaceAllString(title, "$1$2"))
-	return b
-}
-
-func (b *ReplacementBuilder) SetTimestamp(timestamp float64) *ReplacementBuilder {
-	b.thumbnailFunc = func(dearrow *DeArrow) (io.ReadCloser, error) {
-		return dearrow.FetchThumbnail(b.videoID, timestamp)
-	}
-	b.embedBuilder.SetImagef("attachment://thumbnail-%s.webp", b.videoID)
-	return b
-}
-
-func (b *ReplacementBuilder) Build() *ReplacementData {
-	return &ReplacementData{
-		ReplacementThumbnailFunc: b.thumbnailFunc,
-		Embed:                    b.embedBuilder.Build(),
-	}
 }
 
 func formatThumbnailURL(videoID string, timestamp float64) string {

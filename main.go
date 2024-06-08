@@ -126,7 +126,8 @@ func main() {
 	ticker := time.NewTicker(cleanPeriod)
 	go func() {
 		for {
-			<-ticker.C
+			t := <-ticker.C
+			slog.Debug("clearing reply map", slog.Time("timestamp", t), slog.Int("count", len(replyMap)))
 			clear(replyMap)
 		}
 	}()
@@ -205,12 +206,12 @@ loop:
 
 		replyBuilder.AddEmbeds(data.ToEmbed())
 
-		fetchFunc := data.ReplacementThumbnailFunc
-		if fetchFunc == nil { // no need to replace the thumbnail
+		timestamp := data.Timestamp
+		if timestamp == -1 { // no need to fetch a new thumbnail
 			continue
 		}
 		eg.Go(func() error {
-			thumbnail, err := fetchFunc(bot.DeArrow)
+			thumbnail, err := bot.DeArrow.FetchThumbnail(videoID, timestamp)
 			if err != nil {
 				return err
 			}
