@@ -18,6 +18,10 @@ var (
 	videoIDRegex = regexp.MustCompile(`\b[a-zA-Z0-9-_]{11}\b`)
 )
 
+const (
+	lengthLimit = 4096
+)
+
 func (h *Handler) HandleBrandingSlash(event *handler.CommandEvent) error {
 	data := event.SlashCommandInteractionData()
 	videoID := videoIDRegex.FindString(data.String("video"))
@@ -75,9 +79,9 @@ func (h *Handler) handleBranding(event *handler.CommandEvent, videoID string, hi
 		return err
 	}
 	content := fmt.Sprintf("```json\n%s\n```", out.String())
-	if len(content) > 4096 {
+	if len(content) > lengthLimit {
 		return event.CreateMessage(messageBuilder.
-			SetContentf("Response is longer than 4096 chars (%d).", len(content)).
+			SetContentf("Response is longer than **%d** chars (**%d**). See the full response [here](%s).", lengthLimit, len(content), rs.Request.URL).
 			Build())
 	}
 	embedBuilder := discord.NewEmbedBuilder()
