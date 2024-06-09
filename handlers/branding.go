@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"dearrow-bot/util"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -78,7 +77,7 @@ func (h *Handler) handleBranding(event *handler.CommandEvent, videoID string, hi
 	if err := json.Indent(&out, b, "", "  "); err != nil {
 		return err
 	}
-	content := fmt.Sprintf("```json\n%s\n```", out.String())
+	content := "```json\n" + out.String() + "\n```"
 	if len(content) > lengthLimit {
 		return event.CreateMessage(messageBuilder.
 			SetContentf("Response is longer than **%d** chars (**%d**). See the full response [here](%s).", lengthLimit, len(content), rs.Request.URL).
