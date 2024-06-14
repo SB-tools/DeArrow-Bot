@@ -100,13 +100,15 @@ func (b *BrandingResponse) ToReplacementData(videoID string, guildData GuildData
 	embedBuilder.SetThumbnail("")
 	embedBuilder.SetDescription("")
 
-	title := b.replacementTitle()
+	original := embed.Title
+	title := b.replacementTitle(original)
 	timestamp := b.replacementTimestamp(guildData.ThumbnailMode, embedBuilder)
 	if title == "" && timestamp == -1 { // nothing to replace
+		slog.Debug("nothing to replace for video", slog.String("video.id", videoID))
 		return nil
 	}
 	if title != "" {
-		embedBuilder.SetFooterText("Original title: " + embed.Title)
+		embedBuilder.SetFooterText("Original title: " + original)
 		embedBuilder.SetTitle(arrowRegex.ReplaceAllString(title, "$1$2"))
 	}
 	if timestamp != -1 {
@@ -118,10 +120,10 @@ func (b *BrandingResponse) ToReplacementData(videoID string, guildData GuildData
 	}
 }
 
-func (b *BrandingResponse) replacementTitle() string {
+func (b *BrandingResponse) replacementTitle(original string) string {
 	if len(b.Titles) != 0 && b.Titles[0].Votes > -1 {
 		title := b.Titles[0]
-		if title.Original && !title.Locked {
+		if (title.Original && !title.Locked) || title.Title == original {
 			return ""
 		}
 		return title.Title
@@ -132,7 +134,7 @@ func (b *BrandingResponse) replacementTitle() string {
 func (b *BrandingResponse) replacementTimestamp(mode ThumbnailMode, embedBuilder *discord.EmbedBuilder) float64 {
 	if len(b.Thumbnails) != 0 {
 		thumbnail := b.Thumbnails[0]
-		if thumbnail.Original && !thumbnail.Locked || thumbnail.Timestamp == nil {
+		if (thumbnail.Original && !thumbnail.Locked) || thumbnail.Timestamp == nil {
 			return -1
 		}
 		return *thumbnail.Timestamp
