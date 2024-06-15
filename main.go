@@ -232,7 +232,7 @@ loop:
 	}
 
 	if err != nil {
-		slog.Error("error while sending dearrow reply", slog.Any("channel.id", ev.ChannelID), slog.Any("message.id", ev.MessageID), tint.Err(err))
+		slog.Error("error while sending dearrow reply", slog.Any("channel.id", ev.ChannelID), slog.Any("parent.id", ev.MessageID), tint.Err(err))
 		return
 	}
 	replyMap[ev.MessageID] = reply.ID
