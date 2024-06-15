@@ -36,7 +36,6 @@ func NewHandler(b *internal.Bot, c *internal.Config) *Handler {
 	})
 
 	handlers.Command("/Delete embeds", handlers.HandleDeleteEmbeds)
-	//handlers.Command("/Download video", handlers.HandleDownloadVideo)
 	return handlers
 }
 
