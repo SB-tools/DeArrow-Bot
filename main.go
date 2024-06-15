@@ -31,7 +31,8 @@ import (
 )
 
 var (
-	replyMap = make(map[snowflake.ID]snowflake.ID)
+	replyMap    = make(map[snowflake.ID]snowflake.ID)
+	debugLogger *slog.Logger
 )
 
 const (
@@ -54,6 +55,15 @@ func main() {
 	}
 
 	defer sentry.Flush(2 * time.Second)
+
+	fileWriter, err := os.OpenFile("log.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		panic(err)
+	}
+	defer fileWriter.Close()
+	debugLogger = slog.New(slog.NewTextHandler(fileWriter, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
 
 	logger := slog.New(slogmulti.Fanout(
 		tint.NewHandler(os.Stdout, &tint.Options{
@@ -103,7 +113,7 @@ func main() {
 				if replyID, ok := replyMap[ev.MessageID]; ok {
 					rest := ev.Client().Rest()
 					if err := rest.DeleteMessage(ev.ChannelID, replyID); err != nil {
-						slog.Error("error while deleting a reply",
+						slog.Error("dearrow: error while deleting a reply",
 							slog.Any("reply.id", replyID),
 							slog.Any("parent.id", ev.MessageID),
 							slog.Any("channel.id", ev.ChannelID),
@@ -127,7 +137,7 @@ func main() {
 	go func() {
 		for {
 			t := <-ticker.C
-			slog.Debug("clearing reply map", slog.Time("timestamp", t), slog.Int("count", len(replyMap)))
+			debugLogger.Debug("dearrow: clearing reply map", slog.Time("timestamp", t), slog.Int("count", len(replyMap)))
 			clear(replyMap)
 		}
 	}()
@@ -147,18 +157,24 @@ func messageListener(ev *events.GenericGuildMessage, bot *internal.Bot) {
 	}
 	channel, ok := ev.Channel()
 	if !ok {
-		slog.Warn("channel missing in cache", slog.Any("channel.id", ev.ChannelID))
+		slog.Warn("dearrow: channel missing in cache", slog.Any("channel.id", ev.ChannelID))
 		return
 	}
 	client := ev.Client()
 	caches := client.Caches()
 	selfMember, ok := caches.SelfMember(ev.GuildID)
 	if !ok {
-		slog.Warn("self member missing in cache", slog.Any("guild.id", ev.GuildID))
+		slog.Warn("dearrow: self member missing in cache", slog.Any("guild.id", ev.GuildID))
 		return
 	}
 	permissions := caches.MemberPermissionsInChannel(channel, selfMember)
+	debugLogger.Debug("dearrow: permissions in channel", slog.Any("channel.id", ev.ChannelID), slog.Any("permissions", permissions))
+
 	if permissions.Missing(discord.PermissionSendMessages, discord.PermissionManageMessages, discord.PermissionEmbedLinks) {
+		debugLogger.Debug("dearrow: ignoring message due to missing permissions",
+			slog.Any("channel.id", ev.ChannelID),
+			slog.Any("message.id", ev.MessageID),
+			slog.Any("permissions", permissions))
 		return
 	}
 	guildData := bot.GetGuildData(ev.GuildID)
@@ -180,7 +196,7 @@ func messageListener(ev *events.GenericGuildMessage, bot *internal.Bot) {
 		if err != nil {
 			return // fail the entire process if any branding request fails for completeness
 		}
-		data := branding.ToReplacementData(videoID, guildData, embed)
+		data := branding.ToReplacementData(videoID, guildData, embed, debugLogger)
 		if data != nil {
 			replacementMap[videoID] = data
 		}
@@ -232,7 +248,7 @@ loop:
 	}
 
 	if err != nil {
-		slog.Error("error while sending dearrow reply", slog.Any("channel.id", ev.ChannelID), slog.Any("parent.id", ev.MessageID), tint.Err(err))
+		slog.Error("dearrow: error while sending reply", slog.Any("channel.id", ev.ChannelID), slog.Any("parent.id", ev.MessageID), tint.Err(err))
 		return
 	}
 	replyMap[ev.MessageID] = reply.ID
@@ -240,6 +256,6 @@ loop:
 	if _, err := client.Rest().UpdateMessage(ev.ChannelID, ev.MessageID, discord.MessageUpdate{
 		Flags: json.Ptr(discord.MessageFlagSuppressEmbeds),
 	}); err != nil {
-		slog.Error("error while suppressing embeds", slog.Any("channel.id", ev.ChannelID), slog.Any("message.id", ev.MessageID), tint.Err(err))
+		slog.Error("dearrow: error while suppressing embeds", slog.Any("channel.id", ev.ChannelID), slog.Any("message.id", ev.MessageID), tint.Err(err))
 	}
 }
