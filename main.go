@@ -56,7 +56,7 @@ func main() {
 
 	defer sentry.Flush(2 * time.Second)
 
-	fileWriter, err := os.OpenFile("./log.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	fileWriter, err := os.OpenFile("log.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		panic(err)
 	}
