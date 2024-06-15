@@ -13,7 +13,7 @@ func NewHandler(b *internal.Bot, c *internal.Config) *Handler {
 	mux := handler.New()
 	mux.Error(func(e *handler.InteractionEvent, err error) {
 		i := e.Interaction.(discord.ApplicationCommandInteraction)
-		slog.Error("error while handling a command", slog.String("command.name", i.Data.CommandName()), tint.Err(err))
+		slog.Error("dearrow: error while handling a command", slog.String("command.name", i.Data.CommandName()), tint.Err(err))
 		_ = e.Respond(discord.InteractionResponseTypeCreateMessage, discord.NewMessageCreateBuilder().
 			SetContentf("There was an error while handling the command: %v", err).
 			SetEphemeral(true).

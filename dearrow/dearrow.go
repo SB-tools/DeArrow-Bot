@@ -38,18 +38,18 @@ func New(brandingClient *http.Client, thumbnailClient *http.Client) *DeArrow {
 func (d *DeArrow) FetchBranding(videoID string) (*BrandingResponse, error) {
 	rs, err := d.FetchBrandingRaw(videoID, false)
 	if err != nil {
-		slog.Error("error while running a branding request", slog.String("video.id", videoID), tint.Err(err))
+		slog.Error("dearrow: error while running a branding request", slog.String("video.id", videoID), tint.Err(err))
 		return nil, err
 	}
 	status := rs.StatusCode
 	if status != http.StatusOK && status != http.StatusNotFound {
-		slog.Warn("received an unexpected code from a branding response", slog.Int("status.code", status), slog.String("video.id", videoID))
+		slog.Warn("dearrow: received an unexpected code from a branding response", slog.Int("status.code", status), slog.String("video.id", videoID))
 		return nil, err
 	}
 	defer rs.Body.Close()
 	var brandingResponse *BrandingResponse
 	if err := json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
-		slog.Error("error while decoding a branding response", slog.Int("status.code", status), slog.String("video.id", videoID), tint.Err(err))
+		slog.Error("dearrow: error while decoding a branding response", slog.Int("status.code", status), slog.String("video.id", videoID), tint.Err(err))
 		return nil, err
 	}
 	return brandingResponse, nil
@@ -64,11 +64,11 @@ func (d *DeArrow) FetchThumbnail(videoID string, timestamp float64) (io.ReadClos
 
 	rs, err := d.thumbnailClient.Get(thumbnailURL)
 	if err != nil {
-		slog.Error("error while downloading a thumbnail", slog.String("thumbnail.url", thumbnailURL), tint.Err(err))
+		slog.Error("dearrow: error while downloading a thumbnail", slog.String("thumbnail.url", thumbnailURL), tint.Err(err))
 		return nil, err
 	}
 	if rs.StatusCode != http.StatusOK {
-		slog.Warn("received an unexpected code from a thumbnail response",
+		slog.Warn("dearrow: received an unexpected code from a thumbnail response",
 			slog.Int("status.code", rs.StatusCode),
 			slog.String("failure.reason", rs.Header.Get("X-Failure-Reason")),
 			slog.String("video.id", videoID),
@@ -104,7 +104,7 @@ func (b *BrandingResponse) ToReplacementData(videoID string, guildData GuildData
 	title := b.replacementTitle(original)
 	timestamp := b.replacementTimestamp(guildData.ThumbnailMode, embedBuilder)
 	if title == "" && timestamp == -1 { // nothing to replace
-		slog.Debug("nothing to replace for video", slog.String("video.id", videoID))
+		slog.Debug("dearrow: nothing to replace for video", slog.String("video.id", videoID))
 		return nil
 	}
 	if title != "" {
