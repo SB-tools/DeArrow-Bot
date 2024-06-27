@@ -254,7 +254,7 @@ loop:
 	replyMap[ev.MessageID] = reply.ID
 
 	if _, err := client.Rest().UpdateMessage(ev.ChannelID, ev.MessageID, discord.MessageUpdate{
-		Flags: json.Ptr(discord.MessageFlagSuppressEmbeds),
+		Flags: json.Ptr(ev.Message.Flags.Add(discord.MessageFlagSuppressEmbeds)), // add the bit to current flags not to override them
 	}); err != nil {
 		slog.Error("dearrow: error while suppressing embeds", slog.Any("channel.id", ev.ChannelID), slog.Any("message.id", ev.MessageID), tint.Err(err))
 	}
