@@ -6,11 +6,7 @@ import (
 	"github.com/disgoorg/disgo/discord"
 )
 
-func ExtractVideoID(embed discord.Embed) string {
-	provider := embed.Provider
-	if provider == nil || provider.Name != "YouTube" {
-		return ""
-	}
+func ParseVideoID(embed discord.Embed) string {
 	u, _ := url.Parse(embed.URL)
 	return u.Query().Get("v")
 }
