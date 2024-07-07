@@ -181,11 +181,7 @@ func messageListener(ev *events.GenericGuildMessage, bot *internal.Bot) {
 
 	replacementMap := make(map[string]*dearrow.ReplacementData)
 	for _, embed := range ev.Message.Embeds {
-		provider := embed.Provider
-		if provider == nil || provider.Name != "YouTube" {
-			continue
-		}
-		videoID := util.ParseVideoID(embed)
+		videoID := util.ExtractVideoID(embed)
 		if videoID == "" {
 			continue
 		}

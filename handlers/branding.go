@@ -38,7 +38,7 @@ func (h *Handler) HandleBrandingContext(event *handler.CommandEvent) error {
 	message := data.TargetMessage()
 	embeds := message.Embeds
 	if len(embeds) != 0 {
-		videoID = util.ParseVideoID(embeds[0])
+		videoID = util.ExtractVideoID(embeds[0])
 	}
 	if videoID == "" {
 		videoID = videoIDRegex.FindString(message.Content)
