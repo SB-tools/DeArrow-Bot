@@ -7,7 +7,7 @@ require (
 	github.com/disgoorg/json v1.1.0
 	github.com/disgoorg/snowflake/v2 v2.0.1
 	github.com/getsentry/sentry-go v0.28.1
-	github.com/lmittmann/tint v1.0.4
+	github.com/lmittmann/tint v1.0.5
 	github.com/samber/slog-multi v1.2.0
 	github.com/samber/slog-sentry v1.2.2
 	github.com/schollz/jsonstore v1.1.0
