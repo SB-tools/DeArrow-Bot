@@ -112,7 +112,7 @@ func (b *BrandingResponse) ToReplacementData(videoID string, guildData GuildData
 		embedBuilder.SetTitle(arrowRegex.ReplaceAllString(title, "$1$2"))
 	}
 	if timestamp != -1 {
-		embedBuilder.SetImagef("attachment://thumbnail-%s.webp", videoID)
+		embedBuilder.SetImagef("attachment://thumbnail-" + videoID + ".webp")
 	}
 	return &ReplacementData{
 		Timestamp: timestamp,
