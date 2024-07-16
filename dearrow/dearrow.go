@@ -95,9 +95,12 @@ type BrandingResponse struct {
 }
 
 func (b *BrandingResponse) ToReplacementData(videoID string, guildData GuildData, embed discord.Embed, debugLogger *slog.Logger) *ReplacementData {
-	embedBuilder := &discord.EmbedBuilder{Embed: embed}
+	embedBuilder := discord.NewEmbedBuilder()
+	embedBuilder.SetAuthor(embed.Author.Name, embed.Author.URL, "")
+	embedBuilder.SetTitle(embed.Title)
+	embedBuilder.SetURL(embed.URL)
+	embedBuilder.SetColor(embed.Color)
 	embedBuilder.SetImage(embed.Thumbnail.URL)
-	embedBuilder.SetThumbnail("")
 	embedBuilder.SetDescription("")
 
 	original := embed.Title
