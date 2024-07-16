@@ -6,7 +6,6 @@ import (
 	"dearrow-bot/handlers"
 	"dearrow-bot/internal"
 	"dearrow-bot/util"
-	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -232,7 +231,7 @@ loop:
 				return err
 			}
 			c <- thumbnail
-			replyBuilder.AddFile(fmt.Sprintf("thumbnail-%s.webp", videoID), "", thumbnail)
+			replyBuilder.AddFile("thumbnail-"+videoID+".webp", "", thumbnail)
 			return nil
 		})
 	}
