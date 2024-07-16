@@ -12,7 +12,7 @@ import (
 
 type Bot struct {
 	Keystore *jsonstore.JSONStore
-	DeArrow  *dearrow.DeArrow
+	Client   *dearrow.Client
 	ReplyMap map[snowflake.ID]snowflake.ID
 }
 

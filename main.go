@@ -88,7 +88,7 @@ func main() {
 	dearrowClient := dearrow.New(util.NewBrandingClient(), util.NewThumbnailClient())
 	b := &internal.Bot{
 		Keystore: k,
-		DeArrow:  dearrowClient,
+		Client:   dearrowClient,
 		ReplyMap: replyMap,
 	}
 	h := handlers.NewHandler(b, c)
@@ -192,7 +192,7 @@ func messageListener(ev *events.GenericGuildMessage, bot *internal.Bot) {
 		if _, ok := replacementMap[videoID]; ok { // ignore videos that already have a replacement
 			continue
 		}
-		branding, err := bot.DeArrow.FetchBranding(videoID)
+		branding, err := bot.Client.FetchBranding(videoID)
 		if err != nil {
 			return // fail the entire process if any branding request fails for completeness
 		}
@@ -227,7 +227,7 @@ loop:
 			continue
 		}
 		eg.Go(func() error {
-			thumbnail, err := bot.DeArrow.FetchThumbnail(videoID, timestamp)
+			thumbnail, err := bot.Client.FetchThumbnail(videoID, timestamp)
 			if err != nil {
 				return err
 			}

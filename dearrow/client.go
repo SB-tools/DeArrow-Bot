@@ -23,20 +23,20 @@ const (
 	thumbnailApiURL = "https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=%s&time=%.5f&generateNow=true"
 )
 
-type DeArrow struct {
+type Client struct {
 	brandingClient  *http.Client
 	thumbnailClient *http.Client
 }
 
-func New(brandingClient *http.Client, thumbnailClient *http.Client) *DeArrow {
-	return &DeArrow{
+func New(brandingClient *http.Client, thumbnailClient *http.Client) *Client {
+	return &Client{
 		brandingClient:  brandingClient,
 		thumbnailClient: thumbnailClient,
 	}
 }
 
-func (d *DeArrow) FetchBranding(videoID string) (*BrandingResponse, error) {
-	rs, err := d.FetchBrandingRaw(videoID, false)
+func (c *Client) FetchBranding(videoID string) (*BrandingResponse, error) {
+	rs, err := c.FetchBrandingRaw(videoID, false)
 	if err != nil {
 		slog.Error("dearrow: error while running a branding request", slog.String("video.id", videoID), tint.Err(err))
 		return nil, err
@@ -55,14 +55,14 @@ func (d *DeArrow) FetchBranding(videoID string) (*BrandingResponse, error) {
 	return brandingResponse, nil
 }
 
-func (d *DeArrow) FetchBrandingRaw(videoID string, returnUserID bool) (*http.Response, error) {
-	return d.brandingClient.Get(fmt.Sprintf(dearrowApiURL, videoID, returnUserID))
+func (c *Client) FetchBrandingRaw(videoID string, returnUserID bool) (*http.Response, error) {
+	return c.brandingClient.Get(fmt.Sprintf(dearrowApiURL, videoID, returnUserID))
 }
 
-func (d *DeArrow) FetchThumbnail(videoID string, timestamp float64) (io.ReadCloser, error) {
+func (c *Client) FetchThumbnail(videoID string, timestamp float64) (io.ReadCloser, error) {
 	thumbnailURL := fmt.Sprintf(thumbnailApiURL, videoID, timestamp)
 
-	rs, err := d.thumbnailClient.Get(thumbnailURL)
+	rs, err := c.thumbnailClient.Get(thumbnailURL)
 	if err != nil {
 		slog.Error("dearrow: error while downloading a thumbnail", slog.String("thumbnail.url", thumbnailURL), tint.Err(err))
 		return nil, err
