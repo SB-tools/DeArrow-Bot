@@ -89,6 +89,7 @@ func main() {
 	b := &internal.Bot{
 		Keystore: k,
 		DeArrow:  dearrowClient,
+		ReplyMap: replyMap,
 	}
 	h := handlers.NewHandler(b, c)
 

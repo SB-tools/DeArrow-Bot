@@ -21,8 +21,8 @@ func (h *Handler) HandleDeleteEmbeds(event *handler.CommandEvent) error {
 			Build())
 	}
 	rest := event.Client().Rest()
-	channelID := event.Channel().ID()
-	parent, err := rest.GetMessage(channelID, *messageRef.MessageID)
+	parentID := *messageRef.MessageID
+	parent, err := rest.GetMessage(event.Channel().ID(), parentID)
 	if err != nil {
 		return event.CreateMessage(messageBuilder.
 			SetContent("Failed to fetch the parent message.").
@@ -33,10 +33,11 @@ func (h *Handler) HandleDeleteEmbeds(event *handler.CommandEvent) error {
 			SetContent("Only the message author can delete DeArrow embeds.").
 			Build())
 	}
-	if err := rest.DeleteMessage(channelID, message.ID); err != nil {
+	if err := event.CreateMessage(messageBuilder.
+		SetContent("Deleting DeArrow embeds.").
+		Build()); err != nil {
 		return err
 	}
-	return event.CreateMessage(messageBuilder.
-		SetContent("Embeds have been deleted.").
-		Build())
+	delete(h.Bot.ReplyMap, parentID) // remove parent from the map as the DeArrow reply is now gone
+	return rest.DeleteMessage(event.Channel().ID(), message.ID)
 }

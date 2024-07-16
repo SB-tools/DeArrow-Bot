@@ -13,6 +13,7 @@ import (
 type Bot struct {
 	Keystore *jsonstore.JSONStore
 	DeArrow  *dearrow.DeArrow
+	ReplyMap map[snowflake.ID]snowflake.ID
 }
 
 func (b *Bot) GetGuildData(guildID snowflake.ID) (guildData dearrow.GuildData) {
