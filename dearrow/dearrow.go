@@ -60,7 +60,7 @@ func (d *DeArrow) FetchBrandingRaw(videoID string, returnUserID bool) (*http.Res
 }
 
 func (d *DeArrow) FetchThumbnail(videoID string, timestamp float64) (io.ReadCloser, error) {
-	thumbnailURL := formatThumbnailURL(videoID, timestamp)
+	thumbnailURL := fmt.Sprintf(thumbnailApiURL, videoID, timestamp)
 
 	rs, err := d.thumbnailClient.Get(thumbnailURL)
 	if err != nil {
@@ -160,8 +160,4 @@ type ReplacementData struct {
 
 func (d *ReplacementData) ToEmbed() discord.Embed {
 	return d.Embed
-}
-
-func formatThumbnailURL(videoID string, timestamp float64) string {
-	return fmt.Sprintf(thumbnailApiURL, videoID, timestamp)
 }
