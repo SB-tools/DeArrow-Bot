@@ -99,9 +99,9 @@ func (b *BrandingResponse) ToReplacementData(videoID string, guildData GuildData
 	embedBuilder.SetAuthor(embed.Author.Name, embed.Author.URL, "")
 	embedBuilder.SetTitle(embed.Title)
 	embedBuilder.SetURL(embed.URL)
+	embedBuilder.SetFooterText(`Tip: Use Apps -> "Delete embeds" to delete the DeArrow message.`)
 	embedBuilder.SetColor(embed.Color)
 	embedBuilder.SetImage(embed.Thumbnail.URL)
-	embedBuilder.SetDescription("")
 
 	original := embed.Title
 	title := b.replacementTitle(original)
@@ -111,7 +111,7 @@ func (b *BrandingResponse) ToReplacementData(videoID string, guildData GuildData
 		return nil
 	}
 	if title != "" {
-		embedBuilder.SetFooterText("Original title: " + original)
+		embedBuilder.SetDescription("-# Original title: " + original)
 		embedBuilder.SetTitle(arrowRegex.ReplaceAllString(title, "$1$2"))
 	}
 	if timestamp != -1 {
