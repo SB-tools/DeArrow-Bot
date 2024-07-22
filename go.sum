@@ -4,8 +4,8 @@ github.com/disgoorg/disgo v0.18.8 h1:qysxgI5jY+v8crQ6oWIe316CmX761jjDfhuL0RVf0FU
 github.com/disgoorg/disgo v0.18.8/go.mod h1:gkl6DBdbKUvmOOJayWPSvS52KPN/8uJGJ2f13gCEB1o=
 github.com/disgoorg/json v1.1.0 h1:7xigHvomlVA9PQw9bMGO02PHGJJPqvX5AnwlYg/Tnys=
 github.com/disgoorg/json v1.1.0/go.mod h1:BHDwdde0rpQFDVsRLKhma6Y7fTbQKub/zdGO5O9NqqA=
-github.com/disgoorg/snowflake/v2 v2.0.1 h1:CuUxGLwggUxEswZOmZ+mZ5i0xSumQdXW9tXW7uGqe+0=
-github.com/disgoorg/snowflake/v2 v2.0.1/go.mod h1:SPU9c2CNn5DSyb86QcKtdZgix9osEtKrHLW4rMhfLCs=
+github.com/disgoorg/snowflake/v2 v2.0.3 h1:3B+PpFjr7j4ad7oeJu4RlQ+nYOTadsKapJIzgvSI2Ro=
+github.com/disgoorg/snowflake/v2 v2.0.3/go.mod h1:W6r7NUA7DwfZLwr00km6G4UnZ0zcoLBRufhkFWgAc4c=
 github.com/getsentry/sentry-go v0.28.1 h1:zzaSm/vHmGllRM6Tpx1492r0YDzauArdBfkJRtY6P5k=
 github.com/getsentry/sentry-go v0.28.1/go.mod h1:1fQZ+7l7eeJ3wYi82q5Hg8GqAPgefRq+FP/QhafYVgg=
 github.com/go-errors/errors v1.4.2 h1:J6MZopCL4uSllY1OfXM374weqZFFItUbrImctkmUxIA=
