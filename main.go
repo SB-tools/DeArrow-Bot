@@ -170,7 +170,7 @@ func messageListener(ev *events.GenericGuildMessage, bot *internal.Bot) {
 	permissions := caches.MemberPermissionsInChannel(channel, selfMember)
 	debugLogger.Debug("dearrow: permissions in channel", slog.Any("channel.id", ev.ChannelID), slog.Any("permissions", permissions))
 
-	if permissions.Missing(discord.PermissionSendMessages, discord.PermissionManageMessages, discord.PermissionEmbedLinks) {
+	if permissions.Missing(discord.PermissionSendMessages, discord.PermissionManageMessages, discord.PermissionEmbedLinks, discord.PermissionReadMessageHistory) {
 		debugLogger.Debug("dearrow: ignoring message due to missing permissions",
 			slog.Any("channel.id", ev.ChannelID),
 			slog.Any("message.id", ev.MessageID),
