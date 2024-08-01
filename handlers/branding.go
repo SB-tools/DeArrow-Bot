@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	videoIDRegex = regexp.MustCompile(`\b[a-zA-Z0-9-_]{11}\b`)
+	videoIDRegex = regexp.MustCompile(`[a-zA-Z0-9-_]{11}\b`)
 )
 
 const (
