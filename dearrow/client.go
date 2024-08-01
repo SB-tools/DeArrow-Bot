@@ -16,6 +16,7 @@ import (
 var (
 	arrowRegex  = regexp.MustCompile(`(^|\s)>(\S)`)
 	generateErr = errors.New("couldn't generate thumbnail")
+	decodingErr = errors.New("couldn't decode branding response")
 )
 
 const (
@@ -47,10 +48,19 @@ func (c *Client) FetchBranding(videoID string) (*BrandingResponse, error) {
 		return nil, err
 	}
 	defer rs.Body.Close()
-	var brandingResponse *BrandingResponse
-	if err := json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
-		slog.Error("dearrow: error while decoding a branding response", slog.Int("status.code", status), slog.String("video.id", videoID), tint.Err(err))
+	body, err := io.ReadAll(rs.Body)
+	if err != nil {
+		slog.Error("dearrow: error while reading a branding response", slog.Int("status.code", status), slog.String("video.id", videoID), tint.Err(err))
 		return nil, err
+	}
+	var brandingResponse *BrandingResponse
+	if err := json.Unmarshal(body, &brandingResponse); err != nil {
+		slog.Error("dearrow: error while unmarshalling a branding response", slog.Int("status.code", status), slog.String("video.id", videoID), tint.Err(err))
+		return nil, err
+	}
+	if brandingResponse == nil { // TODO temporary check for this behavior
+		slog.Error("dearrow: could not decode a branding response", slog.String("response.body", string(body)), slog.String("video.id", videoID))
+		return nil, decodingErr
 	}
 	return brandingResponse, nil
 }
