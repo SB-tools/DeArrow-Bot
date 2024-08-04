@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"dearrow-bot/db"
 	"dearrow-bot/dearrow"
 	"dearrow-bot/handlers"
 	"dearrow-bot/internal"
@@ -23,10 +22,10 @@ import (
 	"github.com/disgoorg/json"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/getsentry/sentry-go"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lmittmann/tint"
 	slogmulti "github.com/samber/slog-multi"
 	slogsentry "github.com/samber/slog-sentry"
+	"github.com/schollz/jsonstore"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -40,13 +39,7 @@ const (
 )
 
 func main() {
-	pool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
-	if err != nil {
-		panic(err)
-	}
-	defer pool.Close()
-
-	err = sentry.Init(sentry.ClientOptions{
+	err := sentry.Init(sentry.ClientOptions{
 		Dsn:           os.Getenv("SENTRY_DSN"),
 		EnableTracing: false,
 		BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
@@ -80,14 +73,22 @@ func main() {
 
 	slog.Info("starting the bot...", slog.String("disgo.version", disgo.Version))
 
+	storagePath := os.Getenv("DEARROW_STORAGE_PATH")
+	k, err := jsonstore.Open(storagePath)
+	if err != nil {
+		panic(err)
+	}
+
 	dearrowUserID := snowflake.GetEnv("DEARROW_USER_ID")
 	c := &internal.Config{
+		StoragePath:   storagePath,
 		DeArrowUserID: dearrowUserID,
 	}
 
+	dearrowClient := dearrow.New(util.NewBrandingClient(), util.NewThumbnailClient())
 	b := &internal.Bot{
-		DB:       db.NewDB(pool),
-		Client:   dearrow.New(util.NewBrandingClient(), util.NewThumbnailClient()),
+		Keystore: k,
+		Client:   dearrowClient,
 		ReplyMap: replyMap,
 	}
 	h := handlers.NewHandler(b, c)
@@ -176,11 +177,7 @@ func messageListener(ev *events.GenericGuildMessage, bot *internal.Bot) {
 			slog.Any("permissions", permissions))
 		return
 	}
-	config, err := bot.DB.GetGuildConfig(ev.GuildID)
-	if err != nil {
-		slog.Error("dearrow: error while getting guild config", slog.Any("guild.id", ev.GuildID), tint.Err(err))
-		return
-	}
+	guildData := bot.GetGuildData(ev.GuildID)
 
 	replacementMap := make(map[string]*dearrow.ReplacementData)
 	for _, embed := range ev.Message.Embeds {
@@ -199,7 +196,7 @@ func messageListener(ev *events.GenericGuildMessage, bot *internal.Bot) {
 		if err != nil {
 			return // fail the entire process if any branding request fails for completeness
 		}
-		data := branding.ToReplacementData(videoID, config, embed, debugLogger)
+		data := branding.ToReplacementData(videoID, guildData, embed, debugLogger)
 		if data != nil {
 			replacementMap[videoID] = data
 		}

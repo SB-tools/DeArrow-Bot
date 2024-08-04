@@ -5,7 +5,8 @@ import (
 	"github.com/disgoorg/disgo/handler"
 )
 
-func (h *Handler) HandleDeleteEmbeds(data discord.MessageCommandInteractionData, event *handler.CommandEvent) error {
+func (h *Handler) HandleDeleteEmbeds(event *handler.CommandEvent) error {
+	data := event.MessageCommandInteractionData()
 	message := data.TargetMessage()
 	messageRef := message.MessageReference
 	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)

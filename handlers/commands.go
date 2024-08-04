@@ -25,26 +25,17 @@ func NewHandler(b *internal.Bot, c *internal.Config) *Handler {
 		Router: mux,
 	}
 	handlers.Group(func(r handler.Router) {
-		r.Route("/configure", func(r handler.Router) {
-			r.Group(func(r handler.Router) {
-				r.Route("/thumbnails", func(r handler.Router) {
-					r.Command("/current", handlers.HandleThumbnailModeCurrent)
-					r.SlashCommand("/set", handlers.HandleThumbnailModeSet)
-				})
-			})
-			r.Group(func(r handler.Router) {
-				r.Route("/titles", func(r handler.Router) {
-					r.Command("/current", handlers.HandleOriginalTitleModeCurrent)
-					r.SlashCommand("/set", handlers.HandleOriginalTitleModeSet)
-				})
-			})
+		r.Route("/mode", func(r handler.Router) {
+			r.Command("/get", handlers.HandleModeGet)
+			r.Command("/set", handlers.HandleModeSet)
 		})
 	})
 	handlers.Group(func(r handler.Router) {
-		r.SlashCommand("/branding", handlers.HandleBrandingSlash)
-		r.MessageCommand("/Fetch branding", handlers.HandleBrandingContext)
+		r.Command("/branding", handlers.HandleBrandingSlash)
+		r.Command("/Fetch branding", handlers.HandleBrandingContext)
 	})
-	handlers.MessageCommand("/Delete embeds", handlers.HandleDeleteEmbeds)
+
+	handlers.Command("/Delete embeds", handlers.HandleDeleteEmbeds)
 	return handlers
 }
 

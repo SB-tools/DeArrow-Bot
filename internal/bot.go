@@ -1,14 +1,27 @@
 package internal
 
 import (
-	"dearrow-bot/db"
 	"dearrow-bot/dearrow"
+	"errors"
+	"log/slog"
 
 	"github.com/disgoorg/snowflake/v2"
+	"github.com/lmittmann/tint"
+	"github.com/schollz/jsonstore"
 )
 
 type Bot struct {
-	DB       *db.DB
+	Keystore *jsonstore.JSONStore
 	Client   *dearrow.Client
 	ReplyMap map[snowflake.ID]snowflake.ID
+}
+
+func (b *Bot) GetGuildData(guildID snowflake.ID) (guildData dearrow.GuildData) {
+	if err := b.Keystore.Get(guildID.String(), &guildData); err != nil {
+		var noSuchKeyError jsonstore.NoSuchKeyError
+		if !errors.As(err, &noSuchKeyError) {
+			slog.Error("dearrow: error while getting data for a guild", slog.Any("guild.id", guildID), tint.Err(err))
+		}
+	}
+	return
 }
