@@ -21,8 +21,7 @@ const (
 	lengthLimit = 4096
 )
 
-func (h *Handler) HandleBrandingSlash(event *handler.CommandEvent) error {
-	data := event.SlashCommandInteractionData()
+func (h *Handler) HandleBrandingSlash(data discord.SlashCommandInteractionData, event *handler.CommandEvent) error {
 	videoID := videoIDRegex.FindString(data.String("video"))
 	hide, ok := data.OptBool("hide")
 	if !ok {
@@ -31,10 +30,9 @@ func (h *Handler) HandleBrandingSlash(event *handler.CommandEvent) error {
 	return h.handleBranding(event, videoID, hide)
 }
 
-func (h *Handler) HandleBrandingContext(event *handler.CommandEvent) error {
+func (h *Handler) HandleBrandingContext(data discord.MessageCommandInteractionData, event *handler.CommandEvent) error {
 	var videoID string
 
-	data := event.MessageCommandInteractionData()
 	message := data.TargetMessage()
 	embeds := message.Embeds
 	if len(embeds) != 0 {
