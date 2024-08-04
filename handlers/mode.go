@@ -1,34 +1,25 @@
 package handlers
 
 import (
-	"dearrow-bot/dearrow"
+	"dearrow-bot/config"
+	"log/slog"
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
-	"github.com/schollz/jsonstore"
+	"github.com/lmittmann/tint"
 )
 
-func (h *Handler) HandleModeGet(event *handler.CommandEvent) error {
-	return event.CreateMessage(discord.NewMessageCreateBuilder().
-		SetContentf("Current mode is set to **%s**.", h.Bot.GetGuildData(*event.GuildID()).ThumbnailMode).
-		SetEphemeral(true).
-		Build())
-}
+func (h *Handler) modeCurrentHandler(event *handler.CommandEvent, modeFunc func(guild config.Guild) string) error {
+	cfg, err := h.Bot.DB.GetGuildConfig(*event.GuildID())
 
-func (h *Handler) HandleModeSet(event *handler.CommandEvent) error {
-	data := event.SlashCommandInteractionData()
-	guildID := event.GuildID()
-	thumbnailMode := dearrow.ThumbnailMode(data.Int("mode"))
-	if err := h.Bot.Keystore.Set(guildID.String(), dearrow.GuildData{
-		ThumbnailMode: thumbnailMode,
-	}); err != nil {
-		return err
+	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)
+	if err != nil {
+		slog.Error("dearrow: error while getting guild config", slog.Any("guild.id", *event.GuildID()), tint.Err(err))
+		return event.CreateMessage(messageBuilder.
+			SetContent("There was an error while getting the guild configuration.").
+			Build())
 	}
-	if err := jsonstore.Save(h.Bot.Keystore, h.Config.StoragePath); err != nil {
-		return err
-	}
-	return event.CreateMessage(discord.NewMessageCreateBuilder().
-		SetContentf("Mode has been set to **%s**.", thumbnailMode).
-		SetEphemeral(true).
+	return event.CreateMessage(messageBuilder.
+		SetContentf("Current mode is set to **%s**.", modeFunc(cfg)).
 		Build())
 }

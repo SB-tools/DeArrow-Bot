@@ -1,6 +1,7 @@
 package dearrow
 
 import (
+	config "dearrow-bot/config"
 	"errors"
 	"fmt"
 	"io"
@@ -104,7 +105,7 @@ type BrandingResponse struct {
 	VideoDuration *float64 `json:"videoDuration"`
 }
 
-func (b *BrandingResponse) ToReplacementData(videoID string, guildData GuildData, embed discord.Embed, debugLogger *slog.Logger) *ReplacementData {
+func (b *BrandingResponse) ToReplacementData(videoID string, cfg config.Guild, embed discord.Embed, debugLogger *slog.Logger) *ReplacementData {
 	embedBuilder := discord.NewEmbedBuilder()
 	embedBuilder.SetAuthor(embed.Author.Name, embed.Author.URL, "")
 	embedBuilder.SetTitle(embed.Title)
@@ -115,13 +116,15 @@ func (b *BrandingResponse) ToReplacementData(videoID string, guildData GuildData
 
 	original := embed.Title
 	title := b.replacementTitle(original)
-	timestamp := b.replacementTimestamp(guildData.ThumbnailMode, embedBuilder)
+	timestamp := b.replacementTimestamp(cfg.ThumbnailMode, embedBuilder)
 	if title == "" && timestamp == -1 { // nothing to replace
 		debugLogger.Debug("dearrow: nothing to replace for video", slog.String("video.id", videoID))
 		return nil
 	}
 	if title != "" {
-		embedBuilder.SetDescription("-# Original title: " + original)
+		if cfg.OriginalTitleMode == config.OriginalTitleModeShown {
+			embedBuilder.SetDescription("-# Original title: " + original)
+		}
 		embedBuilder.SetTitle(arrowRegex.ReplaceAllString(title, "$1$2"))
 	}
 	if timestamp != -1 {
@@ -144,7 +147,7 @@ func (b *BrandingResponse) replacementTitle(original string) string {
 	return ""
 }
 
-func (b *BrandingResponse) replacementTimestamp(mode ThumbnailMode, embedBuilder *discord.EmbedBuilder) float64 {
+func (b *BrandingResponse) replacementTimestamp(mode config.ThumbnailMode, embedBuilder *discord.EmbedBuilder) float64 {
 	if len(b.Thumbnails) != 0 {
 		thumbnail := b.Thumbnails[0]
 		if (thumbnail.Original && !thumbnail.Locked) || thumbnail.Timestamp == nil {
@@ -153,12 +156,12 @@ func (b *BrandingResponse) replacementTimestamp(mode ThumbnailMode, embedBuilder
 		return *thumbnail.Timestamp
 	}
 	switch mode {
-	case ThumbnailModeRandomTime:
+	case config.ThumbnailModeRandomTime:
 		duration := b.VideoDuration
 		if duration != nil && *duration != 0 {
 			return b.RandomTime * (*duration)
 		}
-	case ThumbnailModeBlank:
+	case config.ThumbnailModeBlank:
 		embedBuilder.SetImage("")
 	default: // we can ignore ThumbnailModeOriginal
 	}
