@@ -11,7 +11,7 @@ require (
 	github.com/lmittmann/tint v1.0.5
 	github.com/samber/slog-multi v1.2.0
 	github.com/samber/slog-sentry v1.2.2
-	golang.org/x/sync v0.7.0
+	golang.org/x/sync v0.8.0
 )
 
 require (
