@@ -26,6 +26,7 @@ func NewDB(pool *pgxpool.Pool) *DB {
 
 func (db *DB) GetGuildConfig(guildID snowflake.ID) (cfg config.Guild, err error) {
 	rows, _ := db.pool.Query(context.Background(), selectQuery, guildID)
+	defer rows.Close()
 	cfg, err = pgx.CollectOneRow(rows, pgx.RowToStructByName[config.Guild])
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
 		err = nil
