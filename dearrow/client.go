@@ -17,7 +17,6 @@ import (
 var (
 	arrowRegex  = regexp.MustCompile(`(^|\s)>(\S)`)
 	generateErr = errors.New("couldn't generate thumbnail")
-	decodingErr = errors.New("couldn't decode branding response")
 )
 
 const (
@@ -37,33 +36,23 @@ func New(brandingClient *http.Client, thumbnailClient *http.Client) *Client {
 	}
 }
 
-func (c *Client) FetchBranding(videoID string) (*BrandingResponse, error) {
+func (c *Client) FetchBranding(videoID string) (brandingResponse *BrandingResponse) {
 	rs, err := c.FetchBrandingRaw(videoID, false)
 	if err != nil {
 		slog.Error("dearrow: error while running a branding request", slog.String("video.id", videoID), tint.Err(err))
-		return nil, err
+		return
 	}
 	status := rs.StatusCode
 	if status != http.StatusOK && status != http.StatusNotFound {
 		slog.Warn("dearrow: received an unexpected code from a branding response", slog.Int("status.code", status), slog.String("video.id", videoID))
-		return nil, err
+		return
 	}
 	defer rs.Body.Close()
-	body, err := io.ReadAll(rs.Body)
-	if err != nil {
-		slog.Error("dearrow: error while reading a branding response", slog.Int("status.code", status), slog.String("video.id", videoID), tint.Err(err))
-		return nil, err
+	if err := json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
+		slog.Error("dearrow: error while decoding a branding response", slog.Int("status.code", status), slog.String("video.id", videoID), tint.Err(err))
+		return
 	}
-	var brandingResponse *BrandingResponse
-	if err := json.Unmarshal(body, &brandingResponse); err != nil {
-		slog.Error("dearrow: error while unmarshalling a branding response", slog.Int("status.code", status), slog.String("video.id", videoID), tint.Err(err))
-		return nil, err
-	}
-	if brandingResponse == nil { // TODO temporary check for this behavior
-		slog.Error("dearrow: could not decode a branding response", slog.String("response.body", string(body)), slog.String("video.id", videoID))
-		return nil, decodingErr
-	}
-	return brandingResponse, nil
+	return nil
 }
 
 func (c *Client) FetchBrandingRaw(videoID string, returnUserID bool) (*http.Response, error) {

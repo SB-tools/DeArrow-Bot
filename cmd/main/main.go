@@ -195,8 +195,8 @@ func messageListener(ev *events.GenericGuildMessage, bot *internal.Bot) {
 		if _, ok := replacementMap[videoID]; ok { // ignore videos that already have a replacement
 			continue
 		}
-		branding, err := bot.Client.FetchBranding(videoID)
-		if err != nil {
+		branding := bot.Client.FetchBranding(videoID)
+		if branding == nil {
 			return // fail the entire process if any branding request fails for completeness
 		}
 		data := branding.ToReplacementData(videoID, config, embed, debugLogger)
