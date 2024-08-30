@@ -36,23 +36,24 @@ func New(brandingClient *http.Client, thumbnailClient *http.Client) *Client {
 	}
 }
 
-func (c *Client) FetchBranding(videoID string) (brandingResponse *BrandingResponse) {
+func (c *Client) FetchBranding(videoID string) *BrandingResponse {
 	rs, err := c.FetchBrandingRaw(videoID, false)
 	if err != nil {
 		slog.Error("dearrow: error while running a branding request", slog.String("video.id", videoID), tint.Err(err))
-		return
+		return nil
 	}
 	status := rs.StatusCode
 	if status != http.StatusOK && status != http.StatusNotFound {
 		slog.Warn("dearrow: received an unexpected code from a branding response", slog.Int("status.code", status), slog.String("video.id", videoID))
-		return
+		return nil
 	}
 	defer rs.Body.Close()
+	var brandingResponse *BrandingResponse
 	if err := json.NewDecoder(rs.Body).Decode(&brandingResponse); err != nil {
 		slog.Error("dearrow: error while decoding a branding response", slog.Int("status.code", status), slog.String("video.id", videoID), tint.Err(err))
-		return
+		return nil
 	}
-	return nil
+	return brandingResponse
 }
 
 func (c *Client) FetchBrandingRaw(videoID string, returnUserID bool) (*http.Response, error) {
