@@ -3,7 +3,7 @@ module dearrow-bot
 go 1.22
 
 require (
-	github.com/disgoorg/disgo v0.18.11
+	github.com/disgoorg/disgo v0.18.12
 	github.com/disgoorg/json v1.2.0
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/getsentry/sentry-go v0.29.0
