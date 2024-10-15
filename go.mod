@@ -6,7 +6,7 @@ require (
 	github.com/disgoorg/disgo v0.18.13
 	github.com/disgoorg/json v1.2.0
 	github.com/disgoorg/snowflake/v2 v2.0.3
-	github.com/getsentry/sentry-go v0.29.0
+	github.com/getsentry/sentry-go v0.29.1
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/lmittmann/tint v1.0.5
 	github.com/samber/slog-multi v1.2.3
