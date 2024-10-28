@@ -9,7 +9,7 @@ require (
 	github.com/getsentry/sentry-go v0.29.1
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/lmittmann/tint v1.0.5
-	github.com/samber/slog-multi v1.2.3
+	github.com/samber/slog-multi v1.2.4
 	github.com/samber/slog-sentry v1.2.2
 	golang.org/x/sync v0.8.0
 )
