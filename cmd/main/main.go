@@ -23,10 +23,10 @@ import (
 	"github.com/disgoorg/json"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/getsentry/sentry-go"
+	sentryslog "github.com/getsentry/sentry-go/slog"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lmittmann/tint"
 	slogmulti "github.com/samber/slog-multi"
-	slogsentry "github.com/samber/slog-sentry"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -75,7 +75,7 @@ func main() {
 		tint.NewHandler(os.Stdout, &tint.Options{
 			Level: slog.LevelInfo,
 		}),
-		slogsentry.Option{Level: slog.LevelWarn}.NewSentryHandler()))
+		sentryslog.Option{Level: slog.LevelWarn}.NewSentryHandler()))
 	slog.SetDefault(logger)
 
 	slog.Info("starting the bot...", slog.String("disgo.version", disgo.Version))
