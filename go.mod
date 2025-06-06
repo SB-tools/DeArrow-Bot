@@ -11,7 +11,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/lmittmann/tint v1.1.1
 	github.com/samber/slog-multi v1.4.0
-	golang.org/x/sync v0.14.0
+	golang.org/x/sync v0.15.0
 )
 
 require (
