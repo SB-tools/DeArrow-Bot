@@ -75,7 +75,7 @@ func main() {
 		tint.NewHandler(os.Stdout, &tint.Options{
 			Level: slog.LevelInfo,
 		}),
-		sentryslog.Option{Level: slog.LevelWarn}.NewSentryHandler()))
+		sentryslog.Option{EventLevel: []slog.Level{slog.LevelWarn}}.NewSentryHandler(context.Background())))
 	slog.SetDefault(logger)
 
 	slog.Info("starting the bot...", slog.String("disgo.version", disgo.Version))
