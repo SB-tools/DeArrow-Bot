@@ -10,7 +10,7 @@ require (
 	github.com/getsentry/sentry-go/slog v0.35.1
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/lmittmann/tint v1.1.2
-	github.com/samber/slog-multi v1.4.1
+	github.com/samber/slog-multi v1.5.0
 	golang.org/x/sync v0.16.0
 )
 
