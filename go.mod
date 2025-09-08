@@ -1,6 +1,6 @@
 module dearrow-bot
 
-go 1.24
+go 1.24.0
 
 require (
 	github.com/disgoorg/disgo v0.18.16
@@ -11,7 +11,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/lmittmann/tint v1.1.2
 	github.com/samber/slog-multi v1.5.0
-	golang.org/x/sync v0.16.0
+	golang.org/x/sync v0.17.0
 )
 
 require (
