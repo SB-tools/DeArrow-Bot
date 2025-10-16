@@ -93,8 +93,7 @@ func main() {
 	h := handlers.NewHandler(b, c)
 
 	client, err := disgo.New(os.Getenv("DEARROW_BOT_TOKEN"),
-		bot.WithGatewayConfigOpts(gateway.WithIntents(gateway.IntentGuildMessages, gateway.IntentMessageContent, gateway.IntentGuilds),
-			gateway.WithPresenceOpts(gateway.WithWatchingActivity("YouTube embeds"))),
+		bot.WithGatewayConfigOpts(gateway.WithIntents(gateway.IntentGuildMessages, gateway.IntentMessageContent, gateway.IntentGuilds)),
 		bot.WithCacheConfigOpts(cache.WithCaches(cache.FlagChannels, cache.FlagRoles, cache.FlagMembers),
 			cache.WithMemberCachePolicy(func(entity discord.Member) bool {
 				return entity.User.ID == dearrowUserID
