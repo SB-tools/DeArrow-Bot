@@ -8,7 +8,7 @@ require (
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/getsentry/sentry-go v0.40.0
 	github.com/getsentry/sentry-go/slog v0.40.0
-	github.com/jackc/pgx/v5 v5.7.6
+	github.com/jackc/pgx/v5 v5.8.0
 	github.com/lmittmann/tint v1.1.2
 	github.com/samber/slog-multi v1.6.0
 	golang.org/x/sync v0.19.0
@@ -24,5 +24,5 @@ require (
 	github.com/sasha-s/go-csync v0.0.0-20240107134140-fcbab37b09ad // indirect
 	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 )
