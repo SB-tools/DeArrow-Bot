@@ -26,7 +26,6 @@ import (
 	sentryslog "github.com/getsentry/sentry-go/slog"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lmittmann/tint"
-	slogmulti "github.com/samber/slog-multi"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -71,7 +70,7 @@ func main() {
 		Level: slog.LevelDebug,
 	}))
 
-	logger := slog.New(slogmulti.Fanout(
+	logger := slog.New(slog.NewMultiHandler(
 		tint.NewHandler(os.Stdout, &tint.Options{
 			Level: slog.LevelInfo,
 		}),
@@ -133,8 +132,7 @@ func main() {
 
 	ticker := time.NewTicker(cleanPeriod)
 	go func() {
-		for {
-			t := <-ticker.C
+		for t := range ticker.C {
 			debugLogger.Debug("dearrow: clearing reply map", slog.Time("timestamp", t), slog.Int("count", len(replyMap)))
 			clear(replyMap)
 		}
