@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"bytes"
-	"dearrow-bot/util"
+	"dearrow-bot/pkg/util"
 	"io"
 	"net/http"
 	"os"

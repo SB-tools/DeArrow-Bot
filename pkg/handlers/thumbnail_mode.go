@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"dearrow-bot/config"
+	"dearrow-bot/pkg/config"
 	"log/slog"
 
 	"github.com/disgoorg/disgo/discord"

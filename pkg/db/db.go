@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"dearrow-bot/config"
+	"dearrow-bot/pkg/config"
 	"errors"
 
 	"github.com/disgoorg/snowflake/v2"

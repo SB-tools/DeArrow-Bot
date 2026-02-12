@@ -1,7 +1,7 @@
 package dearrow
 
 import (
-	"dearrow-bot/config"
+	"dearrow-bot/pkg/config"
 	"errors"
 	"fmt"
 	"io"

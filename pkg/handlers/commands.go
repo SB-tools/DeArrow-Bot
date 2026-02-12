@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"dearrow-bot/internal"
+	internal2 "dearrow-bot/pkg/internal"
 	"log/slog"
 
 	"github.com/disgoorg/disgo/discord"
@@ -9,7 +9,7 @@ import (
 	"github.com/lmittmann/tint"
 )
 
-func NewHandler(b *internal.Bot, c *internal.Config) *Handler {
+func NewHandler(b *internal2.Bot, c *internal2.Config) *Handler {
 	mux := handler.New()
 	mux.Error(func(e *handler.InteractionEvent, err error) {
 		i := e.Interaction.(discord.ApplicationCommandInteraction)
@@ -49,7 +49,7 @@ func NewHandler(b *internal.Bot, c *internal.Config) *Handler {
 }
 
 type Handler struct {
-	Bot    *internal.Bot
-	Config *internal.Config
+	Bot    *internal2.Bot
+	Config *internal2.Config
 	handler.Router
 }

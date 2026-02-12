@@ -1,8 +1,8 @@
-package internal
+package pkg
 
 import (
-	"dearrow-bot/db"
-	"dearrow-bot/dearrow"
+	"dearrow-bot/pkg/db"
+	"dearrow-bot/pkg/dearrow"
 
 	"github.com/disgoorg/snowflake/v2"
 )

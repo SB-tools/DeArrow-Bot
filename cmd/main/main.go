@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"dearrow-bot/db"
-	"dearrow-bot/dearrow"
-	"dearrow-bot/handlers"
-	"dearrow-bot/internal"
-	"dearrow-bot/util"
+	"dearrow-bot/pkg"
+	"dearrow-bot/pkg/db"
+	"dearrow-bot/pkg/dearrow"
+	"dearrow-bot/pkg/handlers"
+	"dearrow-bot/pkg/util"
 	"io"
 	"log/slog"
 	"os"
@@ -80,11 +80,11 @@ func main() {
 	slog.Info("starting the bot...", slog.String("disgo.version", disgo.Version))
 
 	dearrowUserID := snowflake.GetEnv("DEARROW_USER_ID")
-	c := &internal.Config{
+	c := &pkg.Config{
 		DeArrowUserID: dearrowUserID,
 	}
 
-	b := &internal.Bot{
+	b := &pkg.Bot{
 		DB:       db.NewDB(pool),
 		Client:   dearrow.New(util.NewBrandingClient(), util.NewThumbnailClient()),
 		ReplyMap: replyMap,
@@ -144,7 +144,7 @@ func main() {
 	<-s
 }
 
-func messageListener(ev *events.GenericGuildMessage, bot *internal.Bot) {
+func messageListener(ev *events.GenericGuildMessage, bot *pkg.Bot) {
 	if len(ev.Message.Embeds) == 0 {
 		return
 	}
