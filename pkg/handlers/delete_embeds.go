@@ -8,33 +8,23 @@ import (
 func (h *Handler) HandleDeleteEmbeds(data discord.MessageCommandInteractionData, event *handler.CommandEvent) error {
 	message := data.TargetMessage()
 	messageRef := message.MessageReference
-	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)
+	messageCreate := discord.NewMessageCreate().WithEphemeral(true)
 	if messageRef == nil || messageRef.MessageID == nil {
-		return event.CreateMessage(messageBuilder.
-			SetContent("Message is not a reply.").
-			Build())
+		return event.CreateMessage(messageCreate.WithContent("Message is not a reply."))
 	}
 	if message.Author.ID != h.Config.DeArrowUserID {
-		return event.CreateMessage(messageBuilder.
-			SetContent("Message is not a DeArrow reply.").
-			Build())
+		return event.CreateMessage(messageCreate.WithContent("Message is not a DeArrow reply."))
 	}
-	rest := event.Client().Rest()
+	rest := event.Client().Rest
 	parentID := *messageRef.MessageID
 	parent, err := rest.GetMessage(event.Channel().ID(), parentID)
 	if err != nil {
-		return event.CreateMessage(messageBuilder.
-			SetContent("Failed to fetch the parent message.").
-			Build())
+		return event.CreateMessage(messageCreate.WithContent("Failed to fetch the parent message."))
 	}
 	if parent.Author.ID != event.User().ID {
-		return event.CreateMessage(messageBuilder.
-			SetContent("Only the message author can delete DeArrow embeds.").
-			Build())
+		return event.CreateMessage(messageCreate.WithContent("Only the message author can delete DeArrow embeds."))
 	}
-	if err := event.CreateMessage(messageBuilder.
-		SetContent("Deleting DeArrow embeds.").
-		Build()); err != nil {
+	if err := event.CreateMessage(messageCreate.WithContent("Deleting DeArrow embeds.")); err != nil {
 		return err
 	}
 	delete(h.Bot.ReplyMap, parentID) // remove parent from the map as the DeArrow reply is now gone

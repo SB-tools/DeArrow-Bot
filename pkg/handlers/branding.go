@@ -45,26 +45,20 @@ func (h *Handler) HandleBrandingContext(data discord.MessageCommandInteractionDa
 }
 
 func (h *Handler) handleBranding(event *handler.CommandEvent, videoID string, hide bool) error {
-	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)
+	messageCreate := discord.NewMessageCreate().WithEphemeral(true)
 	if videoID == "" {
-		return event.CreateMessage(messageBuilder.
-			SetContent("Cannot extract video ID from input.").
-			Build())
+		return event.CreateMessage(messageCreate.WithContent("Cannot extract video ID from input."))
 	}
 	rs, err := h.Bot.Client.FetchBrandingRaw(videoID, true)
 	if err != nil {
 		if os.IsTimeout(err) {
-			return event.CreateMessage(messageBuilder.
-				SetContent("DeArrow API failed to respond within 2 seconds.").
-				Build())
+			return event.CreateMessage(messageCreate.WithContent("DeArrow API failed to respond within 2 seconds."))
 		}
 		return err
 	}
 	status := rs.StatusCode
 	if status != http.StatusOK && status != http.StatusNotFound {
-		return event.CreateMessage(messageBuilder.
-			SetContentf("DeArrow API returned a non-OK code: **%d**", status).
-			Build())
+		return event.CreateMessage(messageCreate.WithContentf("DeArrow API returned a non-OK code: **%d**", status))
 	}
 	defer rs.Body.Close()
 	b, err := io.ReadAll(rs.Body)
@@ -77,15 +71,10 @@ func (h *Handler) handleBranding(event *handler.CommandEvent, videoID string, hi
 	}
 	content := "```json\n" + out.String() + "\n```"
 	if len(content) > lengthLimit {
-		return event.CreateMessage(messageBuilder.
-			SetContentf("Response is longer than **%d** chars (**%d**). See the full response [here](%s).", lengthLimit, len(content), rs.Request.URL).
-			Build())
+		return event.CreateMessage(messageCreate.WithContentf("Response is longer than **%d** chars (**%d**). See the full response [here](%s).", lengthLimit, len(content), rs.Request.URL))
 	}
 	embedBuilder := discord.NewEmbedBuilder()
 	embedBuilder.SetColor(0x001BFF)
 	embedBuilder.SetDescription(content)
-	return event.CreateMessage(messageBuilder.
-		SetEmbeds(embedBuilder.Build()).
-		SetEphemeral(hide).
-		Build())
+	return event.CreateMessage(messageCreate.WithEmbeds(embedBuilder.Build()).WithEphemeral(hide))
 }

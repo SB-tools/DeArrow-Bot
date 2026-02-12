@@ -17,14 +17,10 @@ func (h *Handler) HandleThumbnailModeCurrent(event *handler.CommandEvent) error 
 
 func (h *Handler) HandleThumbnailModeSet(data discord.SlashCommandInteractionData, event *handler.CommandEvent) error {
 	thumbnailMode := config.ThumbnailMode(data.Int("mode"))
-	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)
+	messageCreate := discord.NewMessageCreate().WithEphemeral(true)
 	if err := h.Bot.DB.UpdateGuildThumbnailMode(*event.GuildID(), thumbnailMode); err != nil {
 		slog.Error("dearrow: error while updating thumbnail mode", slog.Any("mode", thumbnailMode), slog.Any("guild.id", *event.GuildID()), tint.Err(err))
-		return event.CreateMessage(messageBuilder.
-			SetContent("There was an error while updating the thumbnail mode.").
-			Build())
+		return event.CreateMessage(messageCreate.WithContent("There was an error while updating the thumbnail mode."))
 	}
-	return event.CreateMessage(messageBuilder.
-		SetContentf("Mode has been set to **%s**.", thumbnailMode).
-		Build())
+	return event.CreateMessage(messageCreate.WithContentf("Mode has been set to **%s**.", thumbnailMode))
 }

@@ -108,7 +108,7 @@ func main() {
 			},
 			OnGuildMessageDelete: func(ev *events.GuildMessageDelete) {
 				if replyID, ok := replyMap[ev.MessageID]; ok {
-					rest := ev.Client().Rest()
+					rest := ev.Client().Rest
 					if err := rest.DeleteMessage(ev.ChannelID, replyID); err != nil {
 						slog.Error("dearrow: error while deleting a reply",
 							slog.Any("reply.id", replyID),
@@ -157,7 +157,7 @@ func messageListener(ev *events.GenericGuildMessage, bot *pkg.Bot) {
 		return
 	}
 	client := ev.Client()
-	caches := client.Caches()
+	caches := client.Caches
 	selfMember, ok := caches.SelfMember(ev.GuildID)
 	if !ok {
 		slog.Warn("dearrow: self member missing in cache", slog.Any("guild.id", ev.GuildID))
@@ -205,9 +205,9 @@ func messageListener(ev *events.GenericGuildMessage, bot *pkg.Bot) {
 		return
 	}
 
-	replyBuilder := discord.NewMessageCreateBuilder()
-	replyBuilder.SetMessageReferenceByID(ev.MessageID)
-	replyBuilder.SetAllowedMentions(&discord.AllowedMentions{})
+	messageCreate := discord.NewMessageCreate()
+	messageCreate.WithMessageReferenceByID(ev.MessageID)
+	messageCreate.WithAllowedMentions(&discord.AllowedMentions{})
 
 	eg, ctx := errgroup.WithContext(context.Background())
 	c := make(chan io.ReadCloser, len(replacementMap))
@@ -220,7 +220,7 @@ loop:
 
 		}
 
-		replyBuilder.AddEmbeds(data.ToEmbed())
+		messageCreate.AddEmbeds(data.ToEmbed())
 
 		timestamp := data.Timestamp
 		if timestamp == -1 { // no need to fetch a new thumbnail
@@ -232,7 +232,7 @@ loop:
 				return err
 			}
 			c <- thumbnail
-			replyBuilder.AddFile("thumbnail-"+videoID+".webp", "", thumbnail)
+			messageCreate.AddFile("thumbnail-"+videoID+".webp", "", thumbnail)
 			return nil
 		})
 	}
@@ -241,7 +241,7 @@ loop:
 	}
 	close(c)
 
-	reply, err := client.Rest().CreateMessage(ev.ChannelID, replyBuilder.Build())
+	reply, err := client.Rest.CreateMessage(ev.ChannelID, messageCreate)
 
 	for closer := range c {
 		closer.Close()
@@ -253,7 +253,7 @@ loop:
 	}
 	replyMap[ev.MessageID] = reply.ID
 
-	if _, err := client.Rest().UpdateMessage(ev.ChannelID, ev.MessageID, discord.MessageUpdate{
+	if _, err := client.Rest.UpdateMessage(ev.ChannelID, ev.MessageID, discord.MessageUpdate{
 		Flags: json.Ptr(ev.Message.Flags.Add(discord.MessageFlagSuppressEmbeds)), // add the bit to current flags not to override them
 	}); err != nil {
 		slog.Error("dearrow: error while suppressing embeds", slog.Any("channel.id", ev.ChannelID), slog.Any("message.id", ev.MessageID), tint.Err(err))

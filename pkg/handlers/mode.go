@@ -11,15 +11,10 @@ import (
 
 func (h *Handler) modeCurrentHandler(event *handler.CommandEvent, modeFunc func(guild config.Guild) string) error {
 	cfg, err := h.Bot.DB.GetGuildConfig(*event.GuildID())
-
-	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)
+	messageCreate := discord.NewMessageCreate().WithEphemeral(true)
 	if err != nil {
 		slog.Error("dearrow: error while getting guild config", slog.Any("guild.id", *event.GuildID()), tint.Err(err))
-		return event.CreateMessage(messageBuilder.
-			SetContent("There was an error while getting the guild configuration.").
-			Build())
+		return event.CreateMessage(messageCreate.WithContent("There was an error while getting the guild configuration."))
 	}
-	return event.CreateMessage(messageBuilder.
-		SetContentf("Current mode is set to **%s**.", modeFunc(cfg)).
-		Build())
+	return event.CreateMessage(messageCreate.WithContentf("Current mode is set to **%s**.", modeFunc(cfg)))
 }

@@ -17,14 +17,10 @@ func (h *Handler) HandleOriginalTitleModeCurrent(event *handler.CommandEvent) er
 
 func (h *Handler) HandleOriginalTitleModeSet(data discord.SlashCommandInteractionData, event *handler.CommandEvent) error {
 	originalTitleMode := config.OriginalTitleMode(data.Int("mode"))
-	messageBuilder := discord.NewMessageCreateBuilder().SetEphemeral(true)
+	messageCreate := discord.NewMessageCreate().WithEphemeral(true)
 	if err := h.Bot.DB.UpdateGuildTitleMode(*event.GuildID(), originalTitleMode); err != nil {
 		slog.Error("dearrow: error while updating title mode", slog.Any("mode", originalTitleMode), slog.Any("guild.id", *event.GuildID()), tint.Err(err))
-		return event.CreateMessage(messageBuilder.
-			SetContent("There was an error while updating the title mode.").
-			Build())
+		return event.CreateMessage(messageCreate.WithContent("There was an error while updating the title mode."))
 	}
-	return event.CreateMessage(messageBuilder.
-		SetContentf("Mode has been set to **%s**.", originalTitleMode).
-		Build())
+	return event.CreateMessage(messageCreate.WithContentf("Mode has been set to **%s**.", originalTitleMode))
 }
