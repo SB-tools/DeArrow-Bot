@@ -80,10 +80,11 @@ func (c *Client) FetchThumbnail(videoID string, timestamp float64) (io.ReadClose
 }
 
 type BrandingResponse struct {
-	Titles []struct {
+	VideoDuration *float64 `json:"videoDuration"`
+	Titles        []struct {
 		Title    string `json:"title"`
-		Original bool   `json:"original"`
 		Votes    int    `json:"votes"`
+		Original bool   `json:"original"`
 		Locked   bool   `json:"locked"`
 	} `json:"titles"`
 	Thumbnails []struct {
@@ -91,8 +92,7 @@ type BrandingResponse struct {
 		Original  bool     `json:"original"`
 		Locked    bool     `json:"locked"`
 	} `json:"thumbnails"`
-	RandomTime    float64  `json:"randomTime"`
-	VideoDuration *float64 `json:"videoDuration"`
+	RandomTime float64 `json:"randomTime"`
 }
 
 func (b *BrandingResponse) ToReplacementData(videoID string, cfg config.Guild, embed discord.Embed, debugLogger *slog.Logger) *ReplacementData {
@@ -159,9 +159,8 @@ func (b *BrandingResponse) replacementTimestamp(mode config.ThumbnailMode, embed
 }
 
 type ReplacementData struct {
+	Embed     discord.Embed
 	Timestamp float64
-
-	Embed discord.Embed
 }
 
 func (d *ReplacementData) ToEmbed() discord.Embed {
