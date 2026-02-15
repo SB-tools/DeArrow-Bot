@@ -205,8 +205,8 @@ func messageListener(ev *events.GenericGuildMessage, bot *pkg.Bot) {
 	}
 
 	messageCreate := discord.NewMessageCreate()
-	messageCreate.WithMessageReferenceByID(ev.MessageID)
-	messageCreate.WithAllowedMentions(&discord.AllowedMentions{})
+	messageCreate = messageCreate.WithMessageReferenceByID(ev.MessageID)
+	messageCreate = messageCreate.WithAllowedMentions(&discord.AllowedMentions{})
 
 	eg, ctx := errgroup.WithContext(context.Background())
 	c := make(chan io.ReadCloser, len(replacementMap))
@@ -219,7 +219,7 @@ loop:
 
 		}
 
-		messageCreate.AddEmbeds(data.ToEmbed())
+		messageCreate = messageCreate.AddEmbeds(data.ToEmbed())
 
 		timestamp := data.Timestamp
 		if timestamp == -1 { // no need to fetch a new thumbnail
@@ -231,7 +231,7 @@ loop:
 				return err
 			}
 			c <- thumbnail
-			messageCreate.AddFile("thumbnail-"+videoID+".webp", "", thumbnail)
+			messageCreate = messageCreate.AddFile("thumbnail-"+videoID+".webp", "", thumbnail)
 			return nil
 		})
 	}
