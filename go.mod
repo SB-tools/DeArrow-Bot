@@ -10,7 +10,7 @@ require (
 	github.com/getsentry/sentry-go/slog v0.43.0
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/lmittmann/tint v1.1.3
-	golang.org/x/sync v0.19.0
+	golang.org/x/sync v0.20.0
 )
 
 require (
