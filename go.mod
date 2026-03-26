@@ -3,7 +3,7 @@ module dearrow-bot
 go 1.26
 
 require (
-	github.com/disgoorg/disgo v0.19.2
+	github.com/disgoorg/disgo v0.19.3
 	github.com/disgoorg/json v1.2.0
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/getsentry/sentry-go v0.44.1
@@ -14,7 +14,7 @@ require (
 )
 
 require (
-	github.com/disgoorg/godave v0.0.0-20260211222359-4ef3e359a3af // indirect
+	github.com/disgoorg/godave v0.1.0 // indirect
 	github.com/disgoorg/json/v2 v2.0.0 // indirect
 	github.com/disgoorg/omit v1.0.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
