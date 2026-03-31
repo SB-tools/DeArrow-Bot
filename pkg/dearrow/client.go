@@ -96,13 +96,13 @@ type BrandingResponse struct {
 }
 
 func (b *BrandingResponse) ToReplacementData(videoID string, cfg config.Guild, embed discord.Embed, debugLogger *slog.Logger) *ReplacementData {
-	embedBuilder := discord.NewEmbedBuilder()
-	embedBuilder.SetAuthor(embed.Author.Name, embed.Author.URL, "")
-	embedBuilder.SetTitle(embed.Title)
-	embedBuilder.SetURL(embed.URL)
-	embedBuilder.SetFooterText(`Tip: Use Apps -> "Delete embeds" to delete the DeArrow message.`)
-	embedBuilder.SetColor(embed.Color)
-	embedBuilder.SetImage(embed.Thumbnail.URL)
+	embedBuilder := discord.NewEmbed()
+	embedBuilder.WithAuthor(embed.Author.Name, embed.Author.URL, "")
+	embedBuilder.WithTitle(embed.Title)
+	embedBuilder.WithURL(embed.URL)
+	embedBuilder.WithFooterText(`Tip: Use Apps -> "Delete embeds" to delete the DeArrow message.`)
+	embedBuilder.WithColor(embed.Color)
+	embedBuilder.WithImage(embed.Thumbnail.URL)
 
 	original := embed.Title
 	title := b.replacementTitle(original)
@@ -113,16 +113,16 @@ func (b *BrandingResponse) ToReplacementData(videoID string, cfg config.Guild, e
 	}
 	if title != "" {
 		if cfg.OriginalTitleMode == config.OriginalTitleModeShown {
-			embedBuilder.SetDescription("-# Original title: " + original)
+			embedBuilder.WithDescription("-# Original title: " + original)
 		}
-		embedBuilder.SetTitle(arrowRegex.ReplaceAllString(title, "$1$2"))
+		embedBuilder.WithTitle(arrowRegex.ReplaceAllString(title, "$1$2"))
 	}
 	if timestamp != -1 {
-		embedBuilder.SetImage("attachment://thumbnail-" + videoID + ".webp")
+		embedBuilder.WithImage("attachment://thumbnail-" + videoID + ".webp")
 	}
 	return &ReplacementData{
 		Timestamp: timestamp,
-		Embed:     embedBuilder.Build(),
+		Embed:     embedBuilder,
 	}
 }
 
@@ -137,7 +137,7 @@ func (b *BrandingResponse) replacementTitle(original string) string {
 	return ""
 }
 
-func (b *BrandingResponse) replacementTimestamp(mode config.ThumbnailMode, embedBuilder *discord.EmbedBuilder) float64 {
+func (b *BrandingResponse) replacementTimestamp(mode config.ThumbnailMode, embedBuilder discord.Embed) float64 {
 	if len(b.Thumbnails) != 0 {
 		thumbnail := b.Thumbnails[0]
 		if (thumbnail.Original && !thumbnail.Locked) || thumbnail.Timestamp == nil {
@@ -152,7 +152,7 @@ func (b *BrandingResponse) replacementTimestamp(mode config.ThumbnailMode, embed
 			return b.RandomTime * (*duration)
 		}
 	case config.ThumbnailModeBlank:
-		embedBuilder.SetImage("")
+		embedBuilder.WithImage("")
 	default: // we can ignore ThumbnailModeOriginal
 	}
 	return -1
