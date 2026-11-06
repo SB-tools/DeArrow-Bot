@@ -73,8 +73,8 @@ func (h *Handler) handleBranding(event *handler.CommandEvent, videoID string, hi
 	if len(content) > lengthLimit {
 		return event.CreateMessage(messageCreate.WithContentf("Response is longer than **%d** chars (**%d**). See the full response [here](%s).", lengthLimit, len(content), rs.Request.URL))
 	}
-	embedBuilder := discord.NewEmbedBuilder()
-	embedBuilder.SetColor(0x001BFF)
-	embedBuilder.SetDescription(content)
-	return event.CreateMessage(messageCreate.WithEmbeds(embedBuilder.Build()).WithEphemeral(hide))
+	embed := discord.NewEmbed()
+	embed = embed.WithColor(0x001BFF)
+	embed = embed.WithDescription(content)
+	return event.CreateMessage(messageCreate.WithEmbeds(embed).WithEphemeral(hide))
 }
